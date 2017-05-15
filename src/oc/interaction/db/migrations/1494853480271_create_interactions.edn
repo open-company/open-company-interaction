@@ -1,0 +1,32 @@
+(ns oc.interaction.db.migrations.create-interactions
+  (:require [rethinkdb.query :as r]
+            [oc.lib.db.migrations :as m]
+            [oc.interaction.config :as config]
+            [oc.interaction.resources.interaction :as inter-res]))
+
+(defn up [conn]
+  (println "Creating table: " inter-res/table-name)
+  (println (m/create-table conn config/db-name inter-res/table-name inter-res/primary-key))
+  (println (m/create-index conn inter-res/table-name "interaction-uuid"))
+  (println (m/create-index conn inter-res/table-name "entry-uuid"))
+  (println (m/create-index conn inter-res/table-name "board-uuid"))
+  (println (m/create-index conn inter-res/table-name "org-uuid"))
+  (println (m/create-compound-index conn inter-res/table-name "board-uuid-org-uuid"
+              (r/fn [row] [(r/get-field row "board-uuid")
+                           (r/get-field row "org-uuid")])))
+  (println (m/create-compound-index conn inter-res/table-name "topic-slug-board-uuid-org-uuid"
+              (r/fn [row] [(r/get-field row "topic-slug")
+                           (r/get-field row "board-uuid")
+                           (r/get-field row "org-uuid")])))
+  (println (m/create-compound-index conn inter-res/table-name "entry-uuid-topic-slug-board-uuid-org-uuid"
+              (r/fn [row] [(r/get-field row "entry-uuid")
+                           (r/get-field row "topic-slug")
+                           (r/get-field row "board-uuid")
+                           (r/get-field row "org-uuid")])))
+  (println (m/create-compound-index conn inter-res/table-name "interaction-uuid-entry-uuid-topic-slug-board-uuid-org-uuid"
+              (r/fn [row] [(r/get-field row "interaction-uuid")
+                           (r/get-field row "entry-uuid")
+                           (r/get-field row "topic-slug")
+                           (r/get-field row "board-uuid")
+                           (r/get-field row "org-uuid")])))
+  true) ; return true on success

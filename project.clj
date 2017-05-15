@@ -22,7 +22,7 @@
     [compojure "1.6.0"] ; Web routing https://github.com/weavejester/compojure
     [clj-http "3.5.0"] ; HTTP client https://github.com/dakrone/clj-http
     
-    [open-company/lib "0.10.3-577ca7f"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    [open-company/lib "0.10.6-9fe4799"] ; Library for OC projects https://github.com/open-company/open-company-lib
     ; In addition to common functions, brings in the following common dependencies used by this project:
     ; httpkit - Web server http://http-kit.org/
     ; defun - Erlang-esque pattern matching for Clojure functions https://github.com/killme2008/defun
@@ -111,6 +111,7 @@
                  '[oc.lib.db.common :as db-common]
                  '[oc.interaction.app :refer (app)]
                  '[oc.interaction.config :as config]
+                 '[oc.interaction.resources.interaction :as interaction]
                  )
       ]
     }]

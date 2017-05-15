@@ -1,6 +1,7 @@
 (ns oc.interaction.db.migrations.MIGRATION-NAME
   (:require [rethinkdb.query :as r]
-            [oc.lib.db.migrations :as m]))
+            [oc.lib.db.migrations :as m]
+            [oc.interaction.config :as config]))
 
 (defn up [conn]
   ;; Do great things
