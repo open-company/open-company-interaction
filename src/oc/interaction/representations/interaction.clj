@@ -5,8 +5,10 @@
             [oc.lib.hateoas :as hateoas]
             [oc.interaction.config :as config]))
 
-(def interaction-media-type "application/vnd.open-company.interaction.v1+json")
-(def interaction-collection-media-type "application/vnd.collection+vnd.open-company.interaction+json;version=1")
+(def comment-media-type "application/vnd.open-company.comment.v1+json")
+(def comment-collection-media-type "application/vnd.collection+vnd.open-company.comment+json;version=1")
+(def reaction-media-type "application/vnd.open-company.reaction.v1+json")
+(def reaction-collection-media-type "application/vnd.collection+vnd.open-company.reaction+json;version=1")
 
 (def representation-props [:body :reaction :author :created-at :updated-at])
 
@@ -24,7 +26,7 @@
   (str (url (:org-uuid interaction) (:board-uuid interaction) (:topic-slug interaction) (:entry-uuid interaction))
     "/comments/" (:uuid interaction))))
 
-(defn- self-link [interaction] (hateoas/self-link (url interaction) {:accept interaction-media-type}))
+(defn- self-link [interaction] (hateoas/self-link (url interaction) {:accept comment-media-type}))
 
 (defn- interaction-links [interaction access-level]
   (assoc interaction :links [(self-link interaction)]))
@@ -45,7 +47,7 @@
   "
   [org-uuid board-uuid topic-slug entry-uuid interactions user]
   (let [collection-url (url org-uuid board-uuid topic-slug entry-uuid)
-        links [(hateoas/self-link collection-url {:accept interaction-collection-media-type})]]
+        links [(hateoas/self-link collection-url {:accept comment-collection-media-type})]]
     (json/generate-string
       {:collection {:version hateoas/json-collection-version
                     :href collection-url

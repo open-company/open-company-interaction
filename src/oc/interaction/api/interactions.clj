@@ -57,17 +57,17 @@
 
   ;; Media type client accepts
   :available-media-types (by-method {
-                            :get [interact-rep/interaction-collection-media-type]
-                            :post [interact-rep/interaction-media-type]})
+                            :get [interact-rep/comment-collection-media-type]
+                            :post [interact-rep/comment-media-type]})
   :handle-not-acceptable (by-method {
-                            :get (api-common/only-accept 406 interact-rep/interaction-collection-media-type)
-                            :post (api-common/only-accept 406 interact-rep/interaction-media-type)})
+                            :get (api-common/only-accept 406 interact-rep/comment-collection-media-type)
+                            :post (api-common/only-accept 406 interact-rep/comment-media-type)})
   
   ;; Media type client sends
   :known-content-type? (by-method {
                           :options true
                           :get true
-                          :post (fn [ctx] (api-common/known-content-type? ctx interact-rep/interaction-media-type))})
+                          :post (fn [ctx] (api-common/known-content-type? ctx interact-rep/comment-media-type))})
 
   ;; Authorization
   ;; TODO
@@ -100,7 +100,7 @@
                               (api-common/location-response
                                 (interact-rep/url new-interaction)
                                 (interact-rep/render-interaction new-interaction :author)
-                                interact-rep/interaction-media-type)))
+                                interact-rep/comment-media-type)))
   :handle-unprocessable-entity (fn [ctx]
     (api-common/unprocessable-entity-response (:reason ctx))))
 
