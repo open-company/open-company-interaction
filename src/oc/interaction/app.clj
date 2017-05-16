@@ -15,7 +15,8 @@
     [com.stuartsierra.component :as component]
     [oc.lib.sentry-appender :as sa]
     [oc.interaction.components :as components]
-    [oc.interaction.config :as c]))
+    [oc.interaction.config :as c]
+    [oc.interaction.api.interactions :as interactions-api]))
 
 ;; ----- Unhandled Exceptions -----
 
@@ -36,7 +37,8 @@
   (compojure/routes
     (GET "/ping" [] {:body "OpenCompany Interaction Service: OK" :status 200}) ; Up-time monitor
     (GET "/---error-test---" [] (/ 1 0))
-    (GET "/---500-test---" [] {:body "Testing bad things." :status 500})))
+    (GET "/---500-test---" [] {:body "Testing bad things." :status 500})
+    (interactions-api/routes sys)))
 
 ;; ----- System Startup -----
 

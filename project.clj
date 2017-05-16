@@ -112,6 +112,7 @@
                  '[oc.interaction.app :refer (app)]
                  '[oc.interaction.config :as config]
                  '[oc.interaction.resources.interaction :as interaction]
+                 '[oc.interaction.representations.interaction :as interact-rep]
                  )
       ]
     }]

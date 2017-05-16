@@ -18,9 +18,10 @@
 
 (def Interaction {
   :uuid lib-schema/UniqueID
-  :entry-uuid lib-schema/UniqueID
-  :board-uuid lib-schema/UniqueID
   :org-uuid lib-schema/UniqueID
+  :board-uuid lib-schema/UniqueID
+  :topic-slug lib-schema/NonBlankStr
+  :entry-uuid lib-schema/UniqueID
   :author lib-schema/Author
   :created-at lib-schema/ISO8601
   :updated-at lib-schema/ISO8601})
@@ -100,3 +101,19 @@
   [conn interaction :- CommentReaction]
   {:pre [(db-common/conn? conn)]}
   (db-common/create-resource conn table-name interaction (db-common/current-timestamp)))
+
+;; ----- Collection of interactions -----
+
+(schema/defn ^:always-validate get-interactions-by-entry
+  "Given the UUID of the entry, return the latest entry (by :created-at) for each topic."
+  [conn entry-uuid :- lib-schema/UniqueID]
+  {:pre [(db-common/conn? conn)]}
+  (db-common/read-resources conn table-name :entry-uuid entry-uuid))
+
+;; ----- Armageddon -----
+
+(defn delete-all-interactions!
+  "Use with caution! Failure can result in partial deletes. Returns `true` if successful."
+  [conn]
+  {:pre [(db-common/conn? conn)]}
+  (db-common/delete-all-resources! conn table-name))
