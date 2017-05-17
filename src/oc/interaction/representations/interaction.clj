@@ -46,7 +46,7 @@
   for the REST API.
   "
   [org-uuid board-uuid topic-slug entry-uuid interactions user]
-  (let [collection-url (url org-uuid board-uuid topic-slug entry-uuid)
+  (let [collection-url (str (url org-uuid board-uuid topic-slug entry-uuid) "/comments")
         links [(hateoas/self-link collection-url {:accept comment-collection-media-type})]]
     (json/generate-string
       {:collection {:version hateoas/json-collection-version
