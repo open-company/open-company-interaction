@@ -119,6 +119,7 @@ Then enter these commands one-by-one, noting the output:
                                    :entry-uuid "abcd-5678-abcd"
                                    :interaction-uuid "5678-abcd-5678"
                                    :reaction "👌"} author))
+```
 
 ## Testing
 
