@@ -18,7 +18,7 @@
   (str "/orgs/" org-uuid "/boards/" board-uuid "/topic-slug/" topic-slug "/entries/" entry-uuid))
   
   ([org-uuid board-uuid topic-slug entry-uuid reaction-unicode]
-  (str (url org-uuid board-uuid topic-slug entry-uuid) "/" reaction-unicode "/on"))
+  (str (url org-uuid board-uuid topic-slug entry-uuid) "/reactions/" reaction-unicode "/on"))
   
   ([interaction :guard :interaction-uuid]
   (str (url (dissoc interaction :interaction-uuid))
