@@ -131,11 +131,11 @@ The interaction service is composed of 4 main responsibilites:
 - Pushing new comments to Slack
 - Receiving new comments from Slack
 
-![Interaction Service Diagram](https://cdn.rawgit.com/open-company/open-company-interaction/dynamic/docs/OC-Interactions-Service.svg)
+![Interaction Service Diagram](https://cdn.rawgit.com/open-company/open-company-interaction/dynamic/docs/Interactions-Service.svg)
 
-The Interaction Service shares a RethinkDB database instance with the (https://github.com/open-company/open-company-api)[Storage Service].
+The Interaction Service shares a RethinkDB database instance with the [Storage Service](https://github.com/open-company/open-company-api).
 
-![Interaction Schema Diagram](https://cdn.rawgit.com/open-company/open-company-interaction/dynamic/docs/OC-Interactions-Schema.svg)
+![Interaction Schema Diagram](https://cdn.rawgit.com/open-company/open-company-interaction/dynamic/docs/Interactions-Schema.svg)
 
 ## Testing
 
