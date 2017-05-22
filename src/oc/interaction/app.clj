@@ -8,6 +8,7 @@
     [taoensso.timbre :as timbre]
     [ring.logger.timbre :refer (wrap-with-logger)]
     [liberator.dev :refer (wrap-trace)]
+    [ring.middleware.keyword-params :refer (wrap-keyword-params)]
     [ring.middleware.params :refer (wrap-params)]
     [ring.middleware.reload :refer (wrap-reload)]
     [ring.middleware.cors :refer (wrap-cors)]
@@ -49,6 +50,7 @@
   (cond-> (routes sys)
     c/dsn             (sentry-mw/wrap-sentry c/dsn) ; important that this is first
     c/prod?           wrap-with-logger
+    true              wrap-keyword-params
     true              wrap-params
     c/liberator-trace (wrap-trace :header :ui)
     true              (wrap-cors #".*")
@@ -65,10 +67,10 @@
        :appenders {:sentry (sa/sentry-appender c/dsn)}})
     (timbre/merge-config! {:level (keyword c/log-level)}))
 
-    ;; Start the system
-    (-> {:handler-fn app :port port}
-      components/interaction-system
-      component/start)
+  ;; Start the system
+  (-> {:handler-fn app :port port}
+    components/interaction-system
+    component/start)
 
   ;; Echo config information
   (println (str "\n" (slurp (clojure.java.io/resource "ascii_art.txt")) "\n"
