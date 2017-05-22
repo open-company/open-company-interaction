@@ -121,6 +121,22 @@ Then enter these commands one-by-one, noting the output:
                                    :reaction "👌"} author))
 ```
 
+
+## Technical Design
+
+The interaction service is composed of 4 main responsibilites:
+
+- CRUD of comments and reactions
+- WebSocket notifications of comment and reaction CRUD to listening clients
+- Pushing new comments to Slack
+- Receiving new comments from Slack
+
+![Interaction Service Diagram](https://cdn.rawgit.com/open-company/open-company-interaction/dynamic/docs/OC-Interactions-Service.svg)
+
+The Interaction Service shares a RethinkDB database instance with the [https://github.com/open-company/open-company-api](Storage Service).
+
+![Interaction Schema Diagram](https://cdn.rawgit.com/open-company/open-company-interaction/dynamic/docs/OC-Interactions-Schema.svg)
+
 ## Testing
 
 Tests are run in continuous integration of the `master` and `mainline` branches on [Travis CI](https://travis-ci.org/open-company/open-company-interaction):
