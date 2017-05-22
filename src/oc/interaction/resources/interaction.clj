@@ -102,13 +102,34 @@
   {:pre [(db-common/conn? conn)]}
   (db-common/create-resource conn table-name interaction (db-common/current-timestamp)))
 
+(schema/defn ^:always-validate delete-interaction!
+  [conn uuid :- lib-schema/UniqueID]
+  {:pre [(db-common/conn? conn)]}
+  (db-common/delete-resource conn table-name uuid))
+
 ;; ----- Collection of interactions -----
 
 (schema/defn ^:always-validate get-interactions-by-entry
-  "Given the UUID of the entry, return the latest entry (by :created-at) for each topic."
+  "Given the UUID of the entry, return the interactions (sorted by :created-at)."
   [conn entry-uuid :- lib-schema/UniqueID]
   {:pre [(db-common/conn? conn)]}
   (db-common/read-resources conn table-name :entry-uuid entry-uuid))
+
+(schema/defn ^:always-validate get-comments-by-entry
+  "Given the UUID of the entry, return the comments (sorted by :created-at)."
+  [conn entry-uuid :- lib-schema/UniqueID]
+  (filter :body (get-interactions-by-entry conn entry-uuid)))
+
+(schema/defn ^:always-validate get-reactions-by-entry
+  "
+  Given the UUID of the entry, and optionally a specific reaction unicode character,
+  return the reactions (sorted by :created-at).
+  "
+  ([conn entry-uuid :- lib-schema/UniqueID]
+  (filter :reaction (get-interactions-by-entry conn entry-uuid)))
+  
+  ([conn entry-uuid :- lib-schema/UniqueID reaction-unicode :- lib-schema/NonBlankStr]
+  (filter #(= reaction-unicode (:reaction %)) (get-interactions-by-entry conn entry-uuid))))
 
 ;; ----- Armageddon -----
 
