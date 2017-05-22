@@ -15,7 +15,7 @@
 (defun url 
 
   ([org-uuid board-uuid topic-slug entry-uuid]
-  (str "/orgs/" org-uuid "/boards/" board-uuid "/topic/" topic-slug "/entries/" entry-uuid))
+  (str "/orgs/" org-uuid "/boards/" board-uuid "/topics/" topic-slug "/entries/" entry-uuid))
   
   ([org-uuid board-uuid topic-slug entry-uuid reaction-unicode]
   (str (url org-uuid board-uuid topic-slug entry-uuid) "/reactions/" reaction-unicode "/on"))
