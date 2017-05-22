@@ -63,7 +63,7 @@
       ]
       :plugins [
         [lein-midje "3.2.1"] ; Example-based testing https://github.com/marick/lein-midje
-        [jonase/eastwood "0.2.3"] ; Linter https://github.com/jonase/eastwood
+        [jonase/eastwood "0.2.4"] ; Linter https://github.com/jonase/eastwood
         [lein-kibit "0.1.5"] ; Static code search for non-idiomatic code https://github.com/jonase/kibit
       ]
     }

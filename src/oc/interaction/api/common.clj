@@ -3,7 +3,6 @@
   (:require [if-let.core :refer (if-let* when-let*)]
             [taoensso.timbre :as timbre]
             [oc.lib.db.common :as db-common]
-            [oc.interaction.config :as config]
             [oc.interaction.resources.interaction :as interact-res]))
 
 ;; ----- Actions -----
