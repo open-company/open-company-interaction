@@ -5,92 +5,89 @@
             [taoensso.sente :as sente]
             [taoensso.timbre :as timbre]
             [compojure.core :as compojure :refer (defroutes GET POST)]
-            [taoensso.sente.server-adapters.http-kit :refer (get-sch-adapter)]))
+            [taoensso.sente.server-adapters.http-kit :refer (get-sch-adapter)]
+            [oc.lib.jwt :as jwt]
+            [oc.interaction.config :as c]))
 
 
-;; Sente server setup https://github.com/ptaoussanis/sente#on-the-server-clojure-side
+;; ----- Utility functions -----
 
-(let [{:keys [ch-recv send-fn connected-uids
-              ajax-post-fn ajax-get-or-ws-handshake-fn]}
-      (sente/make-channel-socket! (get-sch-adapter) {})]
+(defn session-uid
+  "Function to extract the UUID that Sente needs from the request."
+  [req]
+  (-> req :session :uid))
+
+;; ----- Sente server setup -----
+
+;; https://github.com/ptaoussanis/sente#on-the-server-clojure-side
+
+(reset! sente/debug-mode?_ (not c/prod?))
+
+(let [{:keys [ch-recv send-fn connected-uids ajax-post-fn ajax-get-or-ws-handshake-fn]}
+      (sente/make-channel-socket-server! (get-sch-adapter) 
+        {:packer :edn
+         :user-id-fn session-uid
+         :csrf-token-fn (fn [ring-req] (session-uid ring-req))
+         :handshake-data-fn (fn [ring-req] (timbre/debug "handshake-data-fn") {:test :asd})})]
   (def ring-ajax-post ajax-post-fn)
   (def ring-ajax-get-or-ws-handshake ajax-get-or-ws-handshake-fn)
   (def ch-chsk ch-recv) ; ChannelSocket's receive channel
   (def chsk-send! send-fn) ; ChannelSocket's send API fn
   (def connected-uids connected-uids)) ; Read-only atom of uids with Sente WebSocket connections
 
-;; ----- Utility functions -----
+;; We can watch the connection atom for changes
+; (add-watch connected-uids :connected-uids
+;   (fn [_ _ old new]
+;     (when (not= old new)
+;       (timbre/debug "[websocket]: atom update" new))))
 
-(def session-map (atom (cache/ttl-cache-factory {} :ttl (* 5 60 1000))))
-
-(defn keep-alive
-  "Given a UID, keep it alive."
-  [uid]
-  (timbre/info "[websocket] keep-alive" uid (java.util.Date.))
-  (when-let [token (get @session-map uid)]
-    (swap! session-map assoc uid token)))
-
-(defn add-token
-  "Given a UID and a token, remember it."
-  [uid token]
-  (timbre/info "[websocket] add-token" uid token (java.util.Date.))
-  (swap! session-map assoc uid token))
-
-(defn get-token
-  "Given a UID, retrieve the associated token, if any."
-  [uid]
-  (let [token (get @session-map uid)]
-    (timbre/info "[websocket] get-token" uid token (java.util.Date.))
-    token))
-
-(defn unique-id
-  "Return a really unique ID (for an unsecured session ID).
-  No, a random number is not unique enough. Use a UUID for real!"
-  []
-  (rand-int 10000))
-
-(defn session-uid
-  "Function to extract the UID that Sente needs from the request."
-  [req]
-  (-> req :session :uid))
-
-(defn session-status
-  "Tell the client what state this user's session is in."
-  [req]
-  (when-let [uid (session-uid req)]
-    (chsk-send! uid [:session/state (if (get-token uid) :secure :open)])))
-
-;; ----- Event Handling -----
+;; ----- Sente event handling -----
 
 (declare send-event)
 
-(defmulti handle-event
-  "Handle events based on the event ID."
-  (fn [[ev-id ev-arg] req]
-    (let [params (:params req)]
-      (timbre/info "[websocket] handle-event/" ev-id " - " ev-arg
-        "from user-id:" (:user-id params) "client-id:" (:client-id params)))
-    ev-id))
+(defmulti -event-msg-handler
+  "Multimethod to handle Sente `event-msg`s"
+  :id) ; Dispatch on event-id
 
-(defmethod handle-event :chsk/ws-ping
-  [_ req]
-  (timbre/trace "[websocket] ping")
-  (session-status req))
+(defn event-msg-handler
+  "Wraps `-event-msg-handler` with logging, error catching, etc."
+  [{:as ev-msg :keys [id ?data event]}]
+  (timbre/debug "[websocket]" event id ?data)
+  (-event-msg-handler ev-msg) ; Handle event-msgs on a single thread
+  ;; (future (-event-msg-handler ev-msg)) ; Handle event-msgs on a thread pool
+  )
 
-(defmethod handle-event :auth/jwt
-  [event req]
-  (timbre/info "[websocket] Received auth/jwt")
-  (timbre/info "[websocket] event:" event)
-  (timbre/info "[websocket] request:" req))
+(defmethod -event-msg-handler
+  ;; Default/fallback case (no other matching handler)
+  :default
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+  (timbre/debug "[websocket] default" event id ?data)
+  (let [uid (session-uid ring-req)]
+    (timbre/debug "[websocket] unhandled event: " event "for" uid)
+    (when ?reply-fn
+      (?reply-fn {:umatched-event-as-echoed-from-from-server event}))))
 
-;; Handle unknown events.
-;; Note: this includes the Sente implementation events like:
-;; - :chsk/uidport-open
-;; - :chsk/uidport-close
-(defmethod handle-event :default
-  [event req]
-  (timbre/trace "[websocket] unknown event:" event)
-  nil)
+(defmethod -event-msg-handler :chsk/handshake
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+  (timbre/debug "[websocket] chsk/handshake" event id ?data)
+  (let [uid (session-uid ring-req)]
+    (when ?reply-fn
+      (?reply-fn {:umatched-event-as-echoed-from-from-server event}))))
+
+(defmethod -event-msg-handler :auth/jwt
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+  (let [board-uuid (-> ring-req :params :board-uuid)
+        jwt-valid? (jwt/valid? (:jwt ?data) c/passphrase)]
+    (timbre/info "[websocket] auth/jwt" jwt-valid? "for board" board-uuid)
+    ; Get the jwt and disconnect the client if it's not good!
+    (when ?reply-fn
+      (?reply-fn {:valid jwt-valid?}))))
+
+(defmethod -event-msg-handler
+  ; Client disconnected
+  :chsk/uidport-close
+  [{:as ev-msg :keys [event id]}]
+  (timbre/debug "[websocket] :chsk/uidport-close" event id))
 
 ;; ----- Actions -----
 
@@ -101,31 +98,21 @@
     (timbre/info "[websocket] sending:" event "to:" user-id)
     (chsk-send! user-id event)))
 
-(defn event-loop
-  "Loop to handle inbound events."
-  []
-  (go (loop [{:keys [client-uuid ring-req event] :as data} (<! ch-chsk)]
-        (timbre/info "[websocket] received:" event)
-        (thread (handle-event event ring-req))
-        (recur (<! ch-chsk)))))
+;; ----- Sente router (event loop) -----
 
-;; ----- Routes -----
+(defonce router_ (atom nil))
+
+(defn  stop-router! [] (when-let [stop-fn @router_] (stop-fn)))
+
+(defn start-router! []
+  (stop-router!)
+  (reset! router_
+    (sente/start-server-chsk-router!
+      ch-chsk event-msg-handler)))
+
+;; ----- Ring routes -----
 
 (defn routes [sys]
   (compojure/routes
-    (GET  "/interaction-socket" req (ring-ajax-get-or-ws-handshake req))
-    (POST "/interaction-socket" req (ring-ajax-post req))))
-
-(comment
-
-  ;; Test from Clojure (JVM) REPL
-  (require '[gniazdo.core :as ws])
-
-  (def socket
-    (ws/connect
-      (str "ws://localhost:3002/interaction-socket?client-id=" (java.util.UUID/randomUUID))
-      :on-receive #(println "Received:" %)))
-
-  (ws/close socket)
-
-)
+    (GET "/interaction-socket/boards/:board-uuid" req (ring-ajax-get-or-ws-handshake req))
+    (POST "/interaction-socket/boards/:board-uuid" req (ring-ajax-post req))))

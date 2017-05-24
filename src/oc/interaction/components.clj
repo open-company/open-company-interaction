@@ -11,7 +11,7 @@
   (start [component]
     (let [handler (get-in component [:handler :handler] handler)
           server  (httpkit/run-server handler options)]
-      (websockets-api/event-loop)
+      (websockets-api/start-router!)
       (assoc component :server server)))
   (stop [component]
     (if-not server
