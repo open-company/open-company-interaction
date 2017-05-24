@@ -3,13 +3,15 @@
             [taoensso.timbre :as timbre]
             [org.httpkit.server :as httpkit]
             [oc.lib.db.pool :as pool]
-            [oc.interaction.config :as c]))
+            [oc.interaction.config :as c]
+            [oc.interaction.api.websockets :as websockets-api]))
 
 (defrecord HttpKit [options handler server]
   component/Lifecycle
   (start [component]
     (let [handler (get-in component [:handler :handler] handler)
           server  (httpkit/run-server handler options)]
+      (websockets-api/event-loop)
       (assoc component :server server)))
   (stop [component]
     (if-not server

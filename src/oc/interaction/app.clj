@@ -18,7 +18,8 @@
     [oc.interaction.components :as components]
     [oc.interaction.config :as c]
     [oc.interaction.api.comments :as comments-api]
-    [oc.interaction.api.reactions :as reactions-api]))  
+    [oc.interaction.api.reactions :as reactions-api]
+    [oc.interaction.api.websockets :as websockets-api]))
 
 ;; ----- Unhandled Exceptions -----
 
@@ -41,7 +42,8 @@
     (GET "/---error-test---" [] (/ 1 0))
     (GET "/---500-test---" [] {:body "Testing bad things." :status 500})
     (comments-api/routes sys)
-    (reactions-api/routes sys)))
+    (reactions-api/routes sys)
+    (websockets-api/routes sys)))
 
 ;; ----- System Startup -----
 

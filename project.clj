@@ -21,6 +21,7 @@
     [ring-logger-timbre "0.7.5" :exclusions [com.taoensso/encore]] ; Ring logging https://github.com/nberger/ring-logger-timbre
     [compojure "1.6.0"] ; Web routing https://github.com/weavejester/compojure
     [clj-http "3.5.0"] ; HTTP client https://github.com/dakrone/clj-http
+    [com.taoensso/carmine "2.16.0"] ; Redis client for Clojure https://github.com/ptaoussanis/carmine
     
     [open-company/lib "0.10.7-d128484"] ; Library for OC projects https://github.com/open-company/open-company-lib
     ; In addition to common functions, brings in the following common dependencies used by this project:
@@ -61,6 +62,7 @@
         [midje "1.9.0-alpha6"] ; Example-based testing https://github.com/marick/Midje
         [ring-mock "0.1.5"] ; Test Ring requests https://github.com/weavejester/ring-mock
         [philoskim/debux "0.2.1"] ; `dbg` macro around -> or let https://github.com/philoskim/debux
+        [stylefruits/gniazdo "1.0.0"] ; WebSocket test client https://github.com/stylefruits/gniazdo
       ]
       :plugins [
         [lein-midje "3.2.1"] ; Example-based testing https://github.com/marick/lein-midje
