@@ -20,9 +20,9 @@
     [jumblerg/ring.middleware.cors "1.0.1"] ; CORS library https://github.com/jumblerg/ring.middleware.cors
     [ring-logger-timbre "0.7.5"] ; Ring logging https://github.com/nberger/ring-logger-timbre
     [compojure "1.6.0"] ; Web routing https://github.com/weavejester/compojure
-    [clj-http "3.5.0"] ; HTTP client https://github.com/dakrone/clj-http
+    [clj-http "3.6.0"] ; HTTP client https://github.com/dakrone/clj-http
     
-    [open-company/lib "0.10.6-9fe4799"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    [open-company/lib "0.10.7-d128484"] ; Library for OC projects https://github.com/open-company/open-company-lib
     ; In addition to common functions, brings in the following common dependencies used by this project:
     ; httpkit - Web server http://http-kit.org/
     ; defun - Erlang-esque pattern matching for Clojure functions https://github.com/killme2008/defun
