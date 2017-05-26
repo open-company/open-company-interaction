@@ -66,7 +66,7 @@
   (let [board-uuid (-> ring-req :params :board-uuid)
         client-id (-> ring-req :params :client-id)
         jwt-valid? (jwt/valid? (:jwt ?data) c/passphrase)]
-    (timbre/info "[websocket] auth/jwt" (if jwt-valid? "valid" "invalid") "for board" board-uuid "by" client-id)
+    (timbre/info "[websocket] auth/jwt" (if jwt-valid? "valid" "invalid") "for board:" board-uuid "by" client-id)
     (when jwt-valid?
       (>!! watcher/watcher-chan {:watch true :watch-id board-uuid :client-id client-id}))
     ;; Get the jwt and disconnect the client if it's not good!
