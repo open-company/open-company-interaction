@@ -23,7 +23,7 @@
     [clj-http "3.6.0"] ; HTTP client https://github.com/dakrone/clj-http
     [com.taoensso/carmine "2.16.0"] ; Redis client for Clojure https://github.com/ptaoussanis/carmine
     
-    [open-company/lib "0.10.7-d128484"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    [open-company/lib "0.10.8-ed2f0f8"] ; Library for OC projects https://github.com/open-company/open-company-lib
     ; In addition to common functions, brings in the following common dependencies used by this project:
     ; httpkit - Web server http://http-kit.org/
     ; defun - Erlang-esque pattern matching for Clojure functions https://github.com/killme2008/defun
