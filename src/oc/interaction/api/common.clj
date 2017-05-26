@@ -1,9 +1,12 @@
 (ns oc.interaction.api.common
   "Liberator API for comment resources."
-  (:require [if-let.core :refer (if-let* when-let*)]
+  (:require [clojure.core.async :refer (>!!)]
+            [if-let.core :refer (if-let* when-let*)]
             [taoensso.timbre :as timbre]
             [oc.lib.db.common :as db-common]
-            [oc.interaction.resources.interaction :as interact-res]))
+            [oc.interaction.resources.interaction :as interact-res]
+            [oc.interaction.representations.interaction :as interact-rep]
+            [oc.interaction.lib.watcher :as watcher]))
 
 ;; ----- Actions -----
 
@@ -14,8 +17,19 @@
                               (interact-res/create-comment! conn new-interaction) ; Create the comment
                               (interact-res/create-reaction! conn new-interaction))] ; Create the reaction
     ;; Interaction creation succeeded
-    (let [uuid (:uuid interact-result)]
+    (let [uuid (:uuid interact-result)
+          comment? (:body interact-result)]
       (timbre/info "Created interaction:" uuid)
+      ;; Send the interaction to the watcher for event handling
+      (when comment?
+        (timbre/info "Sending interaction to watcher:" uuid)
+        (>!! watcher/watcher-chan {:send true
+                                   :watch-id (:board-uuid interact-result)
+                                   :event (if comment? :interaction-comment/add :interaction-reaction/add)
+                                   :payload {:topic (:topic-slug interact-result)
+                                             :entry-uuid (:entry-uuid interact-result)
+                                             :interaction (interact-rep/interaction-representation interact-result :none)}}))
+      ;; Return the new interaction for the request context
       {:created-interaction interact-result})
     
     (do (timbre/error "Failed creating interaction.") false)))

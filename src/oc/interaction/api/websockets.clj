@@ -1,6 +1,6 @@
 (ns oc.interaction.api.websockets
   "WebSocket server handler."
-  (:require [clojure.core.async :refer (>!!)]
+  (:require [clojure.core.async :as async :refer (>!! <!!)]
             [taoensso.sente :as sente]
             [taoensso.timbre :as timbre]
             [compojure.core :as compojure :refer (defroutes GET POST)]
@@ -8,7 +8,6 @@
             [oc.lib.jwt :as jwt]
             [oc.interaction.config :as c]
             [oc.interaction.lib.watcher :as watcher]))
-
 
 ;; ----- Sente server setup -----
 
@@ -28,13 +27,13 @@
   (def chsk-send! send-fn) ; ChannelSocket's send API fn
   (def connected-uids connected-uids)) ; Read-only atom of uids with Sente WebSocket connections
 
-;; We can watch the connection atom for changes
+;; Uncomment to watch the connection atom for changes
 ; (add-watch connected-uids :connected-uids
 ;   (fn [_ _ old new]
 ;     (when (not= old new)
 ;       (timbre/debug "[websocket]: atom update" new))))
 
-;; ----- Sente event handling -----
+;; ----- Sente incoming event handling -----
 
 (defmulti -event-msg-handler
   "Multimethod to handle Sente `event-msg`s"
@@ -70,12 +69,12 @@
     (timbre/info "[websocket] auth/jwt" (if jwt-valid? "valid" "invalid") "for board" board-uuid "by" client-id)
     (when jwt-valid?
       (>!! watcher/watcher-chan {:watch true :watch-id board-uuid :client-id client-id}))
-    ; Get the jwt and disconnect the client if it's not good!
+    ;; Get the jwt and disconnect the client if it's not good!
     (when ?reply-fn
       (?reply-fn {:valid jwt-valid?}))))
 
 (defmethod -event-msg-handler
-  ; Client disconnected
+  ;; Client disconnected
   :chsk/uidport-close
   [{:as ev-msg :keys [event id ring-req]}]
   (let [board-uuid (-> ring-req :params :board-uuid)
@@ -83,7 +82,7 @@
     (timbre/info "[websocket] chsk/uidport-close for board" board-uuid "by" client-id)
     (>!! watcher/watcher-chan {:unwatch true :watch-id board-uuid :client-id client-id})))
 
-;; ----- Sente router (event loop) -----
+;; ----- Sente router event loop (incoming) -----
 
 (defonce router_ (atom nil))
 
@@ -94,6 +93,20 @@
   (reset! router_
     (sente/start-server-chsk-router!
       ch-chsk event-msg-handler)))
+
+;; ----- Sender event loop (outgoing) -----
+
+(async/go (while watcher/forever
+  (timbre/debug "Sender waiting...")
+  (let [message (<!! watcher/sender-chan)]
+    (timbre/debug "Processing message on sender channel...")
+    (try
+      (let [event (:event message)
+            id (:id message)]
+        (timbre/info "[websocket] sending:" (first event) "to:" id)
+        (chsk-send! id event))
+      (catch Exception e
+        (timbre/error e))))))
 
 ;; ----- Ring routes -----
 

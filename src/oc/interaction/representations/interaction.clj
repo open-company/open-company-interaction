@@ -38,13 +38,18 @@
   ([reaction-url true] (hateoas/link-map "react" hateoas/DELETE reaction-url {:accept reaction-media-type}))
   ([reaction-url false] (hateoas/link-map "react" hateoas/PUT reaction-url {:accept reaction-media-type})))
 
+(defn interaction-representation
+  "Given an interaction, create a representation."
+  [interaction access-level]
+  (-> interaction
+    (interaction-links access-level)
+    (select-keys (conj representation-props :links))))
+
 (defn render-interaction
   "Given an interaction, create a JSON representation for the REST API."
   [interaction access-level]
   (json/generate-string
-    (-> interaction
-      (interaction-links access-level)
-      (select-keys (conj representation-props :links)))
+    (interaction-representation interaction access-level)
     {:pretty config/pretty?}))
 
 (defn render-interaction-list
