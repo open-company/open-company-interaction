@@ -26,6 +26,7 @@
     [open-company/lib "0.10.8-ed2f0f8"] ; Library for OC projects https://github.com/open-company/open-company-lib
     ; In addition to common functions, brings in the following common dependencies used by this project:
     ; httpkit - Web server http://http-kit.org/
+    ; core.async - Async programming and communication https://github.com/clojure/core.async
     ; defun - Erlang-esque pattern matching for Clojure functions https://github.com/killme2008/defun
     ; if-let - More than one binding for if/when macros https://github.com/LockedOn/if-let
     ; Component - Component Lifecycle https://github.com/stuartsierra/component
