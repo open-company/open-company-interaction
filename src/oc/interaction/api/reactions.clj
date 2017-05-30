@@ -66,7 +66,7 @@
                           (interact-res/delete-interaction! conn (:uuid existing-reaction))
                           (common/notify-watcher :interaction-reaction/delete
                                                  existing-reaction
-                                                 (- (count (:existing-reactions ctx)) 1)))))
+                                                 (-> ctx :existing-reactions count dec)))))
 
   ;; Responses
   :respond-with-entity? true
