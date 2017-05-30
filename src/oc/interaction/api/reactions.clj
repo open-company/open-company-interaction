@@ -60,7 +60,7 @@
                                           topic-slug
                                           entry-uuid
                                           reaction-unicode
-                                          (count (:existing-reactions ctx)))))
+                                          (-> ctx :existing-reactions count inc))))
   :delete! (fn [ctx] (let [existing-reaction (:existing-reaction ctx)]
                         (when existing-reaction
                           (interact-res/delete-interaction! conn (:uuid existing-reaction))
