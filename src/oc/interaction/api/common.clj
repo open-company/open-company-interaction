@@ -10,11 +10,24 @@
 
 ;; ----- Actions -----
 
+(defn notify-watcher
+  "Given an event, an interaction and an optional reeaction count, notify the watcher with core.async."
+  [event interaction reaction-count]
+  (timbre/info "Sending:" event "to the watcher for:" (:uuid interaction))
+  (let [initial-payload {:topic (:topic-slug interaction)
+                         :entry-uuid (:entry-uuid interaction)
+                         :interaction (interact-rep/interaction-representation interaction :none)}
+        payload (if reaction-count (assoc initial-payload :count reaction-count) initial-payload)]
+    (>!! watcher/watcher-chan {:send true
+                               :watch-id (:board-uuid interaction)
+                               :event event
+                               :payload payload})))
+
 (defn create-interaction 
   "Create an interaction in the DB and publish it to the watcher."
 
   ;; For comments, there is no count
-  ([conn ctx] (create-interaction conn ctx 0))
+  ([conn ctx] (create-interaction conn ctx false))
   
   ([conn ctx reaction-count]
   (timbre/info "Creating interaction.")
@@ -27,14 +40,7 @@
           comment? (:body interact-result)]
       (timbre/info "Created interaction:" uuid)
       ;; Send the interaction to the watcher for event handling
-      (timbre/info "Sending interaction to watcher:" uuid)
-      (>!! watcher/watcher-chan {:send true
-                                 :watch-id (:board-uuid interact-result)
-                                 :event (if comment? :interaction-comment/add :interaction-reaction/add)
-                                 :payload {:topic (:topic-slug interact-result)
-                                           :entry-uuid (:entry-uuid interact-result)
-                                           :count (+ reaction-count 1)
-                                           :interaction (interact-rep/interaction-representation interact-result :none)}})
+      (notify-watcher (if comment? :interaction-comment/add :interaction-reaction/add) interact-result reaction-count)
       ;; Return the new interaction for the request context
       {:created-interaction interact-result})
     
