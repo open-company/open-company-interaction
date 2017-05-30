@@ -17,14 +17,14 @@
 
 ;; ----- Actions -----
 
-(defn- create-reaction [conn ctx org-uuid board-uuid topic-slug entry-uuid reaction-unicode]
+(defn- create-reaction [conn ctx org-uuid board-uuid topic-slug entry-uuid reaction-unicode reaction-count]
   (let [interaction-map {:org-uuid org-uuid
                          :board-uuid board-uuid
                          :topic-slug topic-slug
                          :entry-uuid entry-uuid
                          :reaction reaction-unicode}
         author (:user ctx)]
-    (common/create-interaction conn {:new-interaction (interact-res/->reaction interaction-map author)})))
+    (common/create-interaction conn {:new-interaction (interact-res/->reaction interaction-map author)} reaction-count)))
 
 ;; ----- Resources - see: http://clojure-liberator.github.io/liberator/assets/img/decision-graph.svg
 
@@ -54,7 +54,13 @@
   :malformed? false
   :put! (fn [ctx] (if (:existing-reaction ctx)
                     true
-                    (create-reaction conn ctx org-uuid board-uuid topic-slug entry-uuid reaction-unicode)))
+                    (create-reaction conn ctx
+                                          org-uuid
+                                          board-uuid
+                                          topic-slug
+                                          entry-uuid
+                                          reaction-unicode
+                                          (count (:existing-reactions ctx)))))
   :delete! (fn [ctx] (let [existing-reaction (:existing-reaction ctx)]
                         (when existing-reaction
                           (interact-res/delete-interaction! conn (:uuid existing-reaction)))))
