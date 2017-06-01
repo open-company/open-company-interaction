@@ -18,13 +18,14 @@
     [ring/ring-devel "1.6.1"] ; Web application library https://github.com/ring-clojure/ring
     [ring/ring-core "1.6.1"] ; Web application library https://github.com/ring-clojure/ring
     [jumblerg/ring.middleware.cors "1.0.1"] ; CORS library https://github.com/jumblerg/ring.middleware.cors
-    [ring-logger-timbre "0.7.5"] ; Ring logging https://github.com/nberger/ring-logger-timbre
+    [ring-logger-timbre "0.7.5" :exclusions [com.taoensso/encore]] ; Ring logging https://github.com/nberger/ring-logger-timbre
     [compojure "1.6.0"] ; Web routing https://github.com/weavejester/compojure
     [clj-http "3.6.0"] ; HTTP client https://github.com/dakrone/clj-http
     
-    [open-company/lib "0.10.9-2151229"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    [open-company/lib "0.11.2"] ; Library for OC projects https://github.com/open-company/open-company-lib
     ; In addition to common functions, brings in the following common dependencies used by this project:
     ; httpkit - Web server http://http-kit.org/
+    ; core.async - Async programming and communication https://github.com/clojure/core.async
     ; defun - Erlang-esque pattern matching for Clojure functions https://github.com/killme2008/defun
     ; if-let - More than one binding for if/when macros https://github.com/LockedOn/if-let
     ; Component - Component Lifecycle https://github.com/stuartsierra/component
@@ -37,7 +38,8 @@
     ; Cheshire - JSON encoding / decoding https://github.com/dakrone/cheshire
     ; clj-jwt - A Clojure library for JSON Web Token(JWT) https://github.com/liquidz/clj-jwt
     ; clj-time - Date and time lib https://github.com/clj-time/clj-time
-    ; environ - Get environment settings from different sources https://github.com/weavejester/environ
+    ; Environ - Get environment settings from different sources https://github.com/weavejester/environ
+    ; Sente - WebSocket server https://github.com/ptaoussanis/sente
   ]
 
   ;; All profile plugins
@@ -60,6 +62,7 @@
         [midje "1.9.0-alpha6"] ; Example-based testing https://github.com/marick/Midje
         [ring-mock "0.1.5"] ; Test Ring requests https://github.com/weavejester/ring-mock
         [philoskim/debux "0.2.1"] ; `dbg` macro around -> or let https://github.com/philoskim/debux
+        [stylefruits/gniazdo "1.0.0"] ; WebSocket test client https://github.com/stylefruits/gniazdo
       ]
       :plugins [
         [lein-midje "3.2.1"] ; Example-based testing https://github.com/marick/lein-midje

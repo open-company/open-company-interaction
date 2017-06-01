@@ -8,6 +8,7 @@
     [taoensso.timbre :as timbre]
     [ring.logger.timbre :refer (wrap-with-logger)]
     [liberator.dev :refer (wrap-trace)]
+    [ring.middleware.keyword-params :refer (wrap-keyword-params)]
     [ring.middleware.params :refer (wrap-params)]
     [ring.middleware.reload :refer (wrap-reload)]
     [ring.middleware.cors :refer (wrap-cors)]
@@ -17,7 +18,8 @@
     [oc.interaction.components :as components]
     [oc.interaction.config :as c]
     [oc.interaction.api.comments :as comments-api]
-    [oc.interaction.api.reactions :as reactions-api]))  
+    [oc.interaction.api.reactions :as reactions-api]
+    [oc.interaction.api.websockets :as websockets-api]))
 
 ;; ----- Unhandled Exceptions -----
 
@@ -40,7 +42,8 @@
     (GET "/---error-test---" [] (/ 1 0))
     (GET "/---500-test---" [] {:body "Testing bad things." :status 500})
     (comments-api/routes sys)
-    (reactions-api/routes sys)))
+    (reactions-api/routes sys)
+    (websockets-api/routes sys)))
 
 ;; ----- System Startup -----
 
@@ -49,6 +52,7 @@
   (cond-> (routes sys)
     c/dsn             (sentry-mw/wrap-sentry c/dsn) ; important that this is first
     c/prod?           wrap-with-logger
+    true              wrap-keyword-params
     true              wrap-params
     c/liberator-trace (wrap-trace :header :ui)
     true              (wrap-cors #".*")
@@ -65,10 +69,10 @@
        :appenders {:sentry (sa/sentry-appender c/dsn)}})
     (timbre/merge-config! {:level (keyword c/log-level)}))
 
-    ;; Start the system
-    (-> {:handler-fn app :port port}
-      components/interaction-system
-      component/start)
+  ;; Start the system
+  (-> {:handler-fn app :port port}
+    components/interaction-system
+    component/start)
 
   ;; Echo config information
   (println (str "\n" (slurp (clojure.java.io/resource "ascii_art.txt")) "\n"
