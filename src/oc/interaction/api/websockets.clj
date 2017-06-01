@@ -19,7 +19,8 @@
       (sente/make-channel-socket-server! (get-sch-adapter) 
         {:packer :edn
          :user-id-fn (fn [ring-req] (:client-id ring-req)) ; use the client id as the user id
-         :csrf-token-fn (fn [ring-req] (:client-id ring-req))})]
+         :csrf-token-fn (fn [ring-req] (:client-id ring-req))
+         :handshake-data-fn (fn [ring-req] (timbre/debug "handshake-data-fn") {:test :asd})})]
   (def ring-ajax-post ajax-post-fn)
   (def ring-ajax-get-or-ws-handshake ajax-get-or-ws-handshake-fn)
   (def ch-chsk ch-recv) ; ChannelSocket's receive channel
