@@ -35,7 +35,7 @@
 ;; ----- Event handling -----
 
 (defn send-event
-  "Send outbound events with Sente"
+  "Send outbound events to core.async channel"
   [id event payload]
   (timbre/debug "Send request to:" id)
   (>!! sender-chan {:id id :event [event payload]}))
@@ -79,8 +79,3 @@
       (handle-watch-message message)
       (catch Exception e
         (timbre/error e))))))
-
-;; ----- Utility function -----
-
-(defn clear-watchers []
-  )
