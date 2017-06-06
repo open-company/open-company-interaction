@@ -1,4 +1,4 @@
-(ns oc.interaction.lib.watcher
+(ns oc.interaction.async.watcher
   "
   Track which web socket connections are 'watching' which items.
 
@@ -76,6 +76,6 @@
   (let [message (<!! watcher-chan)]
     (timbre/debug "Processing message on watcher channel...")
     (try
-      (handle-watch-message message)
+      (async/thread (handle-watch-message message))
       (catch Exception e
         (timbre/error e))))))

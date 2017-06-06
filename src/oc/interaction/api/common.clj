@@ -7,8 +7,8 @@
             [oc.lib.db.common :as db-common]
             [oc.interaction.resources.interaction :as interact-res]
             [oc.interaction.representations.interaction :as interact-rep]
-            [oc.interaction.lib.watcher :as watcher]
-            [oc.interaction.lib.slack-mirror :as mirror]))
+            [oc.interaction.async.watcher :as watcher]
+            [oc.interaction.async.slack-mirror :as mirror]))
 
 ;; TODO hard coding of Slack mirror, replace once we have config of Slack mirror
 (def slack-mirror {:slack-org "T06SBMH60" :channel-name "bot-testing" :channel-id "C10A1P4H2"})

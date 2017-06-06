@@ -1,11 +1,11 @@
-(ns oc.interaction.lib.slack-mirror
+(ns oc.interaction.async.slack-mirror
   "
   Mirror comments in Slack.
 
   Use of this mirror is through core/async. A message is sent to the `echo-chan` or `proxy-chan` to
   mirror a comment in Slack.
   "
-  (:require [clojure.core.async :as async :refer [<!! >!! thread]]
+  (:require [clojure.core.async :as async :refer [<!! >!!]]
             [defun.core :refer (defun-)]
             [taoensso.timbre :as timbre]
             [oc.lib.slack :as slack]))
@@ -26,7 +26,7 @@
             interaction (:comment message)
             uuid (:uuid interaction)
             slack-channel (:slack-channel message)]
-        (thread
+        (async/thread
           (timbre/debug "Echoing comment to Slack:" uuid)
           (let [result (slack/echo-comment (:token slack-user) (:channel-id slack-channel) (:body interaction))]
             (if (:ok result)
@@ -47,7 +47,7 @@
             uuid (:uuid interaction)
             slack-channel (:slack-channel message)
             author (:author message)]
-        (thread
+        (async/thread
           (timbre/debug "Proxying comment to Slack:" uuid)
           (let [result (slack/proxy-comment (:token slack-bot) (:channel-id slack-channel) (:body interaction) (:name author))]
             (if (:ok result)

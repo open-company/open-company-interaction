@@ -7,7 +7,7 @@
             [taoensso.sente.server-adapters.http-kit :refer (get-sch-adapter)]
             [oc.lib.jwt :as jwt]
             [oc.interaction.config :as c]
-            [oc.interaction.lib.watcher :as watcher]))
+            [oc.interaction.async.watcher :as watcher]))
 
 ;; ----- Sente server setup -----
 
@@ -82,7 +82,7 @@
     (timbre/info "[websocket] chsk/uidport-close for board" board-uuid "by" client-id)
     (>!! watcher/watcher-chan {:unwatch true :watch-id board-uuid :client-id client-id})))
 
-;; ----- Sente router event loop (incoming) -----
+;; ----- Sente router event loop (incoming from Sente/WebSocket) -----
 
 (defonce router_ (atom nil))
 
@@ -94,17 +94,18 @@
     (sente/start-server-chsk-router!
       ch-chsk event-msg-handler)))
 
-;; ----- Sender event loop (outgoing) -----
+;; ----- Sender event loop (outgoing to Sente/WebSocket) -----
 
 (async/go (while watcher/forever
   (timbre/debug "Sender waiting...")
   (let [message (<!! watcher/sender-chan)]
     (timbre/debug "Processing message on sender channel...")
     (try
-      (let [event (:event message)
-            id (:id message)]
-        (timbre/info "[websocket] sending:" (first event) "to:" id)
-        (chsk-send! id event))
+      (async/thread
+        (let [event (:event message)
+              id (:id message)]
+          (timbre/info "[websocket] sending:" (first event) "to:" id)
+          (chsk-send! id event)))
       (catch Exception e
         (timbre/error e))))))
 
