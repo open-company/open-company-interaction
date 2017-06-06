@@ -59,9 +59,9 @@
     :post (fn [ctx] (valid-new-comment? conn ctx org-uuid board-uuid topic-slug entry-uuid))})
 
   ;; Existentialism
-  :exists? (fn [ctx] (if (common/entry-exists? conn org-uuid board-uuid topic-slug entry-uuid)
+  :exists? (fn [ctx] (if-let [entry (common/entry-exists? conn org-uuid board-uuid topic-slug entry-uuid)]
                         (let [comments (interact-res/get-comments-by-entry conn entry-uuid)]
-                          {:existing-comments comments})
+                          {:existing-entry entry :existing-comments comments})
                         false))
 
   ;; Actions

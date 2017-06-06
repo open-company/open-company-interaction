@@ -4,9 +4,11 @@
 
   Use of this mirror is through core/async. A message is sent to the `echo-chan` or `proxy-chan` to
   mirror a comment in Slack.
+
+  Comments are echoed to a Slack thread (defined by a Slack timestamp), the first comment for an entry
+  initiates the Slack thread.
   "
   (:require [clojure.core.async :as async :refer [<!! >!!]]
-            [defun.core :refer (defun-)]
             [taoensso.timbre :as timbre]
             [oc.lib.slack :as slack]))
 
@@ -14,6 +16,7 @@
 
 (def echo-chan (async/chan 10000)) ; buffered channel
 (def proxy-chan (async/chan 10000)) ; buffered channel
+(def persist-ts-chan (async/chan 10000)) ; buffered channel
 
 ;; ----- Slack echo event loop (outgoing to Slack) -----
 
@@ -55,3 +58,5 @@
               (timbre/error "Unable to proxy comment:" uuid "to Slack:" result)))))
       (catch Exception e
         (timbre/error e))))))
+
+;; ----- Slack echo event loop (internal) -----

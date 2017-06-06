@@ -45,14 +45,14 @@
 
 (defn- echo-comment
   "Given a decoded JWToken and a comment, mirror it to Slack as the user."
-  [user interaction]
+  [user entry interaction]
   (>!! mirror/echo-chan {:slack-user (slack-user user)
                          :comment interaction
                          :slack-channel slack-mirror}))
 
 (defn- proxy-comment
   "Given a decoded JWToken and a comment, mirror it to Slack on behalf of the user."
-  [user interaction]
+  [user entry interaction]
   (>!! mirror/proxy-chan {:slack-bot (slack-bot user)
                           :comment interaction
                           :slack-channel slack-mirror
@@ -65,17 +65,17 @@
   ;; TODO this case once we have config of Slack mirror
 
   ;; we can mirror it to Slack as the user
-  ([user :guard slack-user interaction]
-  (timbre/info "Using Slack user to mirror comment:" (:uuid interaction))
-  (echo-comment user interaction))
+  ([user :guard slack-user entry interaction]
+  (timbre/info "Using Slack user to mirror comment:" (:uuid interaction) "of entry:" (:uuid entry))
+  (echo-comment user entry interaction))
 
   ;; we can mirror it to Slack by proxy with the bot
-  ([user :guard slack-bot interaction]
-  (timbre/info "Using Slack bot to mirror comment:" (:uuid interaction))
-  (proxy-comment user interaction))
+  ([user :guard slack-bot entry interaction]
+  (timbre/info "Using Slack bot to mirror comment:" (:uuid interaction)  "of entry:" (:uuid entry))
+  (proxy-comment user entry interaction))
 
   ;; no slack user or bot
-  ([_user interaction] (timbre/debug "Skipping Slack mirroring of comment:" (:uuid interaction))))
+  ([_user _entry interaction] (timbre/debug "Skipping Slack mirroring of comment:" (:uuid interaction))))
 
 (defn create-interaction 
   "Create an interaction in the DB and publish it to the watcher (WebSockets) and Slack mirror."
@@ -96,7 +96,7 @@
       ;; Send the interaction to the watcher for event handling
       (notify-watcher (if comment? :interaction-comment/add :interaction-reaction/add) interact-result reaction-count)
       ;; Send the a comment to the mirror for mirroring to Slack
-      (when comment? (notify-mirror (:user ctx) interact-result))
+      (when comment? (notify-mirror (:user ctx) (:existing-entry ctx) interact-result))
       ;; Return the new interaction for the request context
       {:created-interaction interact-result})
     
@@ -111,4 +111,4 @@
               topic-board? ((set (:topics board)) topic-slug)
               entry (db-common/read-resource conn "entries" entry-uuid)
               entry-topic? (= (:topic-slug entry) topic-slug)]
-    true))
+    entry))
