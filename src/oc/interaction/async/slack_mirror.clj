@@ -22,7 +22,8 @@
 (defonce echo-chan (async/chan 10000)) ; buffered channel
 (defonce proxy-chan (async/chan 10000)) ; buffered channel
 
-;; TODO move this into its own channel
+;; ----- DB Persistence -----
+
 (defn handle-result
   "Store Slack thread (ts) in interaction for future replies."
   [db-pool result slack-channel interaction]
