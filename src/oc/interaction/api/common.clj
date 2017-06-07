@@ -48,14 +48,14 @@
   [user entry interaction]
   (>!! mirror/echo-chan {:slack-user (slack-user user)
                          :comment interaction
-                         :slack-channel slack-mirror}))
+                         :slack-channel (assoc slack-mirror :thread (-> interaction :slack-mirror :thread))}))
 
 (defn- proxy-comment
   "Given a decoded JWToken and a comment, mirror it to Slack on behalf of the user."
   [user entry interaction]
   (>!! mirror/proxy-chan {:slack-bot (slack-bot user)
                           :comment interaction
-                          :slack-channel slack-mirror
+                          :slack-channel (assoc slack-mirror :thread (-> interaction :slack-mirror :thread))
                           :author user}))
 
 (defun- notify-mirror

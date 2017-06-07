@@ -9,6 +9,10 @@
             [oc.interaction.config :as c]
             [oc.interaction.async.watcher :as watcher]))
 
+;; ----- core.async -----
+
+(defonce sender-go (atom true))
+
 ;; ----- Sente server setup -----
 
 ;; https://github.com/ptaoussanis/sente#on-the-server-clojure-side
@@ -86,9 +90,11 @@
 
 (defonce router_ (atom nil))
 
-(defn  stop-router! [] (when-let [stop-fn @router_] (stop-fn)))
+(defn- stop-router! []
+  (when-let [stop-fn @router_]
+    (stop-fn)))
 
-(defn start-router! []
+(defn- start-router! []
   (stop-router!)
   (reset! router_
     (sente/start-server-chsk-router!
@@ -96,18 +102,21 @@
 
 ;; ----- Sender event loop (outgoing to Sente/WebSocket) -----
 
-(async/go (while watcher/forever
-  (timbre/debug "Sender waiting...")
-  (let [message (<!! watcher/sender-chan)]
-    (timbre/debug "Processing message on sender channel...")
-    (try
-      (async/thread
-        (let [event (:event message)
-              id (:id message)]
-          (timbre/info "[websocket] sending:" (first event) "to:" id)
-          (chsk-send! id event)))
-      (catch Exception e
-        (timbre/error e))))))
+(defn sender-loop []
+  (async/go (while @sender-go
+    (timbre/debug "Sender waiting...")
+    (let [message (<!! watcher/sender-chan)]
+      (timbre/debug "Processing message on sender channel...")
+      (if (:stop message)
+        (do (reset! sender-go false) (timbre/info "Sender stopped."))
+        (async/thread
+          (try
+            (let [event (:event message)
+                  id (:id message)]
+              (timbre/info "[websocket] sending:" (first event) "to:" id)
+              (chsk-send! id event))
+            (catch Exception e
+              (timbre/error e)))))))))
 
 ;; ----- Ring routes -----
 
@@ -115,3 +124,21 @@
   (compojure/routes
     (GET "/interaction-socket/boards/:board-uuid" req (ring-ajax-get-or-ws-handshake req))
     (POST "/interaction-socket/boards/:board-uuid" req (ring-ajax-post req))))
+
+;; ----- Component start/stop -----
+
+(defn start
+  "Start the incoming WebSocket frame router and the cor.async loop for sending outgoing WebSocket frames."
+  []
+  (start-router!)
+  (sender-loop))
+
+(defn stop
+  "Stop the incoming WebSocket frame router and the cor.async loop for sending outgoing WebSocket frames."
+  []
+  (timbre/info "Stopping incoming websocket router...")
+  (stop-router!)
+  (timbre/info "Router stopped.")
+  (when @sender-go
+    (timbre/info "Stopping sender...")
+    (>!! watcher/sender-chan {:stop true})))
