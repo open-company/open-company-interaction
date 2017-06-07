@@ -94,8 +94,9 @@
   []
   (watcher-loop))
 
-(defn stop []
+(defn stop
   "Stop the core.async channel consumer for watching items."
+  []
   (when @watcher-go
     (timbre/info "Stopping watcher...")
     (>!! watcher-chan {:stop true})))
