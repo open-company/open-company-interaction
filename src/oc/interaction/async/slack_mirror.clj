@@ -12,7 +12,7 @@
             [taoensso.timbre :as timbre]
             [oc.lib.db.pool :as pool]
             [oc.lib.slack :as slack]
-            [oc.interaction.resources.interaction :as interact-res]))
+            [oc.lib.db.common :as db-common]))
 
 ;; ----- core.async -----
 
@@ -22,17 +22,15 @@
 (defonce echo-chan (async/chan 10000)) ; buffered channel
 (defonce proxy-chan (async/chan 10000)) ; buffered channel
 
-
 ;; TODO move this into its own channel
 (defn handle-result
   "Store Slack thread (ts) in interaction for future replies."
   [db-pool result slack-channel interaction]
-  (when-not (:slack-thread interaction) ; nothing to do if comment already has a Slack thread
+  (when-not (:thread slack-channel) ; nothing to do if comment already has a Slack thread
     (let [slack-thread (assoc slack-channel :thread (:ts result))]
-      (timbre/info "Persisting slack thread:" slack-thread "to interaction:" (:uuid interaction))
+      (timbre/info "Persisting slack thread:" slack-thread "to entry:" (:entry-uuid interaction))
       (pool/with-pool [conn db-pool]
-
-      ))))
+        (db-common/update-resource conn "entries" :uuid (:entry-uuid interaction) {:slack-thread slack-thread})))))
 
 ;; ----- Event loops (outgoing to Slack) -----
 
@@ -102,7 +100,7 @@
 (defn start
   "Start the core.async channel consumers for mirroring comments to Slack."
   [sys]
-  (let [db-pool (:db-pool sys)]
+  (let [db-pool (-> sys :db-pool :pool)]
     (echo-loop db-pool)
     (proxy-loop db-pool)))
 

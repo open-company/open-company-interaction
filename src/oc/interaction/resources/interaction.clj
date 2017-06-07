@@ -102,6 +102,30 @@
   {:pre [(db-common/conn? conn)]}
   (db-common/create-resource conn table-name interaction (db-common/current-timestamp)))
 
+(schema/defn ^:always-validate get-interaction :- (schema/maybe (schema/either Comment Reaction))
+  "Given the uuid of the interaction, retrieve the interaction, or return nil if it doesn't exist."
+  ([conn uuid :- lib-schema/UniqueID]
+  {:pre [(db-common/conn? conn)]}
+  (db-common/read-resource conn table-name uuid)))
+
+(schema/defn ^:always-validate update-interaction! :- (schema/maybe (schema/either Comment Reaction))
+  "
+  Given the interaction's UUID and an updated interaction property map, update the interaction
+  and return the updated interaction on success.
+
+  Throws an exception if the merge of the prior interaction and the updated interaction property map doesn't conform
+  to either the Comment or the Reaction schema.
+  "
+  [conn uuid :- lib-schema/UniqueID interaction]
+  {:pre [(db-common/conn? conn)
+         (map? interaction)]}
+  (when-let [original-interact (get-interaction conn uuid)]
+    (let [updated-interact (merge original-interact (clean interaction))]
+      (if (:body updated-interact)
+        (schema/validate Comment updated-interact)
+        (schema/validate Reaction updated-interact))
+      (db-common/update-resource conn table-name primary-key original-interact updated-interact))))
+
 (schema/defn ^:always-validate delete-interaction!
   [conn uuid :- lib-schema/UniqueID]
   {:pre [(db-common/conn? conn)]}

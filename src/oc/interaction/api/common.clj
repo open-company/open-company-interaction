@@ -11,22 +11,22 @@
             [oc.interaction.async.slack-mirror :as mirror]))
 
 ;; TODO hard coding of Slack mirror, replace once we have config of Slack mirror
-(def slack-mirror {:slack-org "T06SBMH60" :channel-name "bot-testing" :channel-id "C10A1P4H2"})
+(def slack-mirror {:slack-org-id "T06SBMH60" :channel-name "bot-testing" :channel-id "C10A1P4H2"})
 
 ;; ----- Utility Functions -----
 
 (defn- slack-user
   "Do we have a user ID and token for the mirroring Slack org?"
   [user]
-  (let [slack-org (keyword (:slack-org slack-mirror))]
-    (-> user :slack-users slack-org)))
+  (let [slack-org-id (keyword (:slack-org-id slack-mirror))]
+    (-> user :slack-users slack-org-id)))
 
 (defn- slack-bot
   "Do we have a Slack bot for the mirroring Slack org?"
   [user]
-  (let [slack-org (:slack-org slack-mirror)
+  (let [slack-org-id (:slack-org-id slack-mirror)
         slack-bots (-> user :slack-bots vals concat flatten)]
-    (some #(if (= (:slack-org-id %) slack-org) % false) slack-bots)))
+    (some #(if (= (:slack-org-id %) slack-org-id) % false) slack-bots)))
 
 ;; ----- Actions -----
 
@@ -48,14 +48,14 @@
   [user entry interaction]
   (>!! mirror/echo-chan {:slack-user (slack-user user)
                          :comment interaction
-                         :slack-channel (assoc slack-mirror :thread (-> interaction :slack-mirror :thread))}))
+                         :slack-channel (assoc slack-mirror :thread (-> entry :slack-thread :thread))}))
 
 (defn- proxy-comment
   "Given a decoded JWToken and a comment, mirror it to Slack on behalf of the user."
   [user entry interaction]
   (>!! mirror/proxy-chan {:slack-bot (slack-bot user)
                           :comment interaction
-                          :slack-channel (assoc slack-mirror :thread (-> interaction :slack-mirror :thread))
+                          :slack-channel (assoc slack-mirror :thread (-> entry :slack-thread :thread))
                           :author user}))
 
 (defun- notify-mirror
