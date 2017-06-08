@@ -17,12 +17,13 @@
     [org.clojure/tools.cli "0.3.5"] ; Command-line parsing https://github.com/clojure/tools.cli
     [ring/ring-devel "1.6.1"] ; Web application library https://github.com/ring-clojure/ring
     [ring/ring-core "1.6.1"] ; Web application library https://github.com/ring-clojure/ring
+    [ring/ring-json "0.5.0-beta1"] ; JSON request/response https://github.com/ring-clojure/ring-json
     [jumblerg/ring.middleware.cors "1.0.1"] ; CORS library https://github.com/jumblerg/ring.middleware.cors
     [ring-logger-timbre "0.7.5" :exclusions [com.taoensso/encore]] ; Ring logging https://github.com/nberger/ring-logger-timbre
     [compojure "1.6.0"] ; Web routing https://github.com/weavejester/compojure
     [clj-http "3.6.1"] ; HTTP client https://github.com/dakrone/clj-http
     
-    [open-company/lib "0.11.6"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    [open-company/lib "0.11.7"] ; Library for OC projects https://github.com/open-company/open-company-lib
     ; In addition to common functions, brings in the following common dependencies used by this project:
     ; httpkit - Web server http://http-kit.org/
     ; core.async - Async programming and communication https://github.com/clojure/core.async
@@ -82,6 +83,7 @@
         :aws-secret-access-key "CHANGE-ME"
         :aws-sqs-bot-queue "CHANGE-ME"
         :aws-sqs-email-queue "CHANGE-ME"
+        :log-level "debug"
       }
       :plugins [
         [lein-bikeshed "0.4.1"] ; Check for code smells https://github.com/dakrone/lein-bikeshed
@@ -134,7 +136,6 @@
   :repl-options {
     :welcome (println (str "\n" (slurp (clojure.java.io/resource "ascii_art.txt")) "\n"
                       "OpenCompany Interaction REPL\n"
-                      "Database: " oc.interaction.config/db-name "\n"
                       "\nReady to do your bidding... I suggest (go) or (go <port>) as your first command.\n"))
     :init-ns dev
   }

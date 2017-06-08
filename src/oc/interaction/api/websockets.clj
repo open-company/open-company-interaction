@@ -46,22 +46,20 @@
 (defn event-msg-handler
   "Wraps `-event-msg-handler` with logging, error catching, etc."
   [{:as ev-msg :keys [id ?data event]}]
-  (timbre/debug "[websocket]" event id ?data)
-  (-event-msg-handler ev-msg) ; Handle event-msgs on a single thread
-  ;; (future (-event-msg-handler ev-msg)) ; Handle event-msgs on a thread pool
-  )
+  (timbre/trace "[websocket]" event id ?data)
+  (-event-msg-handler ev-msg))
 
 (defmethod -event-msg-handler
   ;; Default/fallback case (no other matching handler)
   :default
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
-  (timbre/debug "[websocket] unhandled event " event "for" id)
+  (timbre/trace "[websocket] unhandled event " event "for" id)
   (when ?reply-fn
     (?reply-fn {:umatched-event-as-echoed-from-from-server event})))
 
 (defmethod -event-msg-handler :chsk/handshake
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
-  (timbre/debug "[websocket] chsk/handshake" event id ?data)
+  (timbre/trace "[websocket] chsk/handshake" event id ?data)
   (when ?reply-fn
     (?reply-fn {:umatched-event-as-echoed-from-from-server event})))
 

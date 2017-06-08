@@ -8,6 +8,7 @@
     [taoensso.timbre :as timbre]
     [ring.logger.timbre :refer (wrap-with-logger)]
     [liberator.dev :refer (wrap-trace)]
+    [ring.middleware.json :refer (wrap-json-body)]
     [ring.middleware.keyword-params :refer (wrap-keyword-params)]
     [ring.middleware.params :refer (wrap-params)]
     [ring.middleware.reload :refer (wrap-reload)]
@@ -19,7 +20,8 @@
     [oc.interaction.config :as c]
     [oc.interaction.api.comments :as comments-api]
     [oc.interaction.api.reactions :as reactions-api]
-    [oc.interaction.api.websockets :as websockets-api]))
+    [oc.interaction.api.websockets :as websockets-api]
+    [oc.interaction.api.slack :as slack-api]))
 
 ;; ----- Unhandled Exceptions -----
 
@@ -43,9 +45,20 @@
     (GET "/---500-test---" [] {:body "Testing bad things." :status 500})
     (comments-api/routes sys)
     (reactions-api/routes sys)
-    (websockets-api/routes sys)))
+    (websockets-api/routes sys)
+    (wrap-json-body (slack-api/routes sys))))
 
 ;; ----- System Startup -----
+
+(defn echo-config [port]
+  (println (str "\n"
+    "Running on port: " port "\n"
+    "Database: " c/db-name "\n"
+    "Database pool: " c/db-pool-size "\n"
+    "Hot-reload: " c/hot-reload "\n"
+    "Trace: " c/liberator-trace "\n"
+    "Sentry: " c/dsn "\n\n"
+    (when c/intro? "Ready to serve...\n"))))
 
 ;; Ring app definition
 (defn app [sys]
@@ -75,15 +88,10 @@
     component/start)
 
   ;; Echo config information
-  (println (str "\n" (slurp (clojure.java.io/resource "ascii_art.txt")) "\n"
-    "OpenCompany Interaction Service\n\n"
-    "Running on port: " port "\n"
-    "Database: " c/db-name "\n"
-    "Database pool: " c/db-pool-size "\n"
-    "Hot-reload: " c/hot-reload "\n"
-    "Trace: " c/liberator-trace "\n"
-    "Sentry: " c/dsn "\n\n"
-    "Ready to serve...\n")))
+  (println (str "\n" 
+    (when c/intro? (str (slurp (clojure.java.io/resource "ascii_art.txt")) "\n"))
+    "OpenCompany Interaction Service\n"))
+  (echo-config port))
 
 (defn -main []
   (start c/interaction-server-port))

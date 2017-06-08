@@ -17,7 +17,7 @@
 (defonce watcher-chan (async/chan 10000)) ; buffered channel
 (defonce sender-chan (async/chan 10000)) ; buffered channel
 
-(defonce watcher-go (atom true))
+(defonce watcher-go (atom nil))
 
 ;; ----- Storage atom and functions -----
 

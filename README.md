@@ -40,6 +40,7 @@ Most of the dependencies are internal, meaning [Leiningen](https://github.com/te
 
 * [Java 8](http://www.oracle.com/technetwork/java/javase/downloads/index.html) - a Java 8 JRE is needed to run Clojure
 * [Leiningen](https://github.com/technomancy/leiningen) 2.5.1+ - Clojure's build and dependency management tool
+* [ngrok](https://ngrok.com/) - Secure web tunnel to localhost
 
 #### Java
 
@@ -68,12 +69,24 @@ cd open-company-interaction
 lein deps
 ```
 
+#### ngrok
+
+ngrok allows you to setup a secure web tunnel for HTTP/S requests to your localhost. You'll need this
+to utilize the Slack webhook during local development so Slack can communicate with your local development
+environment.
+
+ngrok is trivial to setup:
+
+1. [Download](https://ngrok.com/download) the version for your operating system.
+1. Unzip the download and put ngrok someplace handy for you (in your path is good!)
+1. Verify you can run ngrok with: `ngrox help`
+
+
 ## Usage
 
 Run the interaction service with: `lein start`
 
 Or start a REPL with: `lein repl`
-
 
 #### REPL
 
@@ -122,6 +135,34 @@ Then enter these commands one-by-one, noting the output:
                                    :interaction-uuid "5678-abcd-5678"
                                    :reaction "👌"} author))
 ```
+
+A Slack webhook is used to mirror Slack replies to OpenCompany comments back into OpenCompany.
+
+To use the webhook from Slack with local development, you need to run ngrok, then configure your Slack integration.
+
+First start the Interaction Service (see above), and start the ngrox tunnel:
+
+```console
+ngrok http 3002
+```
+
+Note the URL ngrok provides. It will look like: `http://6ae20d9b.ngrok.io` -> localhost:3002
+
+To configure the Slack to use the ngrok tunnel as the destination of message.channel events. Go to
+[Your Apps](https://api.slack.com/apps) and click the "OpenCompany (Local Development)" app.
+
+Click the "Event Subscriptions" navigation in the menu. Click the toggle on.
+
+Add the URL provided by ngrok above, modifying `http` to `https` and with a `/slack-event` suffix,
+e.g. `https://6ae20d9b.ngrok.io/slack-event`
+
+ Click the "Add Team Event" button and add the `message.channel` event. Click the "Add Bot User Event" button and
+ add the `message.channel` event.
+
+Click the "Save Changes" button.
+
+NB: Make sure when you are done testing locally, you disable the "Enable Events" toggle so Slack will stop trying
+to echo events to your local environment via ngrok.
 
 
 ## Technical Design
