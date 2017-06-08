@@ -35,7 +35,6 @@
   (let [body (:body request)
         type (get body "type")
         thread (get-in body ["event" "thread_ts"])]
-    (println request)
     (cond 
 
       ;; This is a check of the web hook by Slack, echo back the challeng
