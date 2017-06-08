@@ -7,6 +7,7 @@
             [oc.lib.api.common :as api-common]
             [oc.interaction.config :as config]
             [oc.interaction.api.common :as common]
+            [oc.interaction.async.watcher :as watcher]
             [oc.interaction.representations.interaction :as interact-rep]
             [oc.interaction.resources.interaction :as interact-res]))
 
@@ -64,9 +65,9 @@
   :delete! (fn [ctx] (let [existing-reaction (:existing-reaction ctx)]
                         (when existing-reaction
                           (interact-res/delete-interaction! conn (:uuid existing-reaction))
-                          (common/notify-watcher :interaction-reaction/delete
-                                                 existing-reaction
-                                                 (-> ctx :existing-reactions count dec)))))
+                          (watcher/notify-watcher :interaction-reaction/delete
+                                                  existing-reaction
+                                                  (-> ctx :existing-reactions count dec)))))
 
   ;; Responses
   :respond-with-entity? true

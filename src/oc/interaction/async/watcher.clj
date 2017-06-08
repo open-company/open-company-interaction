@@ -10,7 +10,8 @@
   "
   (:require [clojure.core.async :as async :refer [<!! >!!]]
             [defun.core :refer (defun-)]
-            [taoensso.timbre :as timbre]))
+            [taoensso.timbre :as timbre]
+            [oc.interaction.representations.interaction :as interact-rep]))
 
 ;; ----- core.async -----
 
@@ -33,6 +34,21 @@
 
 (defn watchers-for [watch-id]
   (vec (get @watchers watch-id)))
+
+;; ----- Actions -----
+
+(defn notify-watcher
+  "Given an event, an interaction and an optional reeaction count, notify the watcher with core.async."
+  [event interaction reaction-count]
+  (timbre/info "Sending:" event "to the watcher for:" (:uuid interaction))
+  (let [initial-payload {:topic (:topic-slug interaction)
+                         :entry-uuid (:entry-uuid interaction)
+                         :interaction (interact-rep/interaction-representation interaction :none)}
+        payload (if reaction-count (assoc initial-payload :count reaction-count) initial-payload)]
+    (>!! watcher-chan {:send true
+                       :watch-id (:board-uuid interaction)
+                       :event event
+                       :payload payload})))
 
 ;; ----- Event handling -----
 

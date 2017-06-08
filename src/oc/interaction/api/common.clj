@@ -30,19 +30,6 @@
 
 ;; ----- Actions -----
 
-(defn notify-watcher
-  "Given an event, an interaction and an optional reeaction count, notify the watcher with core.async."
-  [event interaction reaction-count]
-  (timbre/info "Sending:" event "to the watcher for:" (:uuid interaction))
-  (let [initial-payload {:topic (:topic-slug interaction)
-                         :entry-uuid (:entry-uuid interaction)
-                         :interaction (interact-rep/interaction-representation interaction :none)}
-        payload (if reaction-count (assoc initial-payload :count reaction-count) initial-payload)]
-    (>!! watcher/watcher-chan {:send true
-                               :watch-id (:board-uuid interaction)
-                               :event event
-                               :payload payload})))
-
 (defn- echo-comment
   "Given a decoded JWToken and a comment, mirror it to Slack as the user."
   [user entry interaction]
@@ -94,7 +81,10 @@
           comment? (:body interact-result)]
       (timbre/info "Created interaction:" uuid)
       ;; Send the interaction to the watcher for event handling
-      (notify-watcher (if comment? :interaction-comment/add :interaction-reaction/add) interact-result reaction-count)
+      (watcher/notify-watcher (if comment? :interaction-comment/add
+                                           :interaction-reaction/add)
+                              interact-result
+                              reaction-count)
       ;; Send the a comment to the mirror for mirroring to Slack
       (when comment? (notify-mirror (:user ctx) (:existing-entry ctx) interact-result))
       ;; Return the new interaction for the request context
