@@ -6,7 +6,6 @@
             [taoensso.timbre :as timbre]
             [oc.lib.db.common :as db-common]
             [oc.interaction.resources.interaction :as interact-res]
-            [oc.interaction.representations.interaction :as interact-rep]
             [oc.interaction.async.watcher :as watcher]
             [oc.interaction.async.slack-mirror :as mirror]))
 

@@ -157,8 +157,11 @@
   ;; ----- Code check configuration -----
 
   :eastwood {
-    ;; Disable some linters that are enabled by default
-    :exclude-linters [:constant-test :wrong-arity]
+    ;; Disable some linters that are enabled by default:
+    ;; contant-test - just seems mostly ill-advised, logical constants are useful in something like a `->cond` 
+    ;; deprecations - the useful `either` from Prismatic schema is deprecated, we'll eventually switch to clojure.spec
+    :exclude-linters [:constant-test :deprecations]
+
     ;; Enable some linters that are disabled by default
     :add-linters [:unused-namespaces :unused-private-vars] ; :unused-locals]
 
