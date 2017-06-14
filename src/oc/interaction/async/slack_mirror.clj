@@ -92,7 +92,9 @@
                   channel-id (:channel-id slack-channel)
                   thread (:thread slack-channel)
                   text (:body interaction)]
-              (timbre/info "Echoing comment to Slack:" uuid)
+              (if thread
+                (timbre/info "Echoing comment to Slack:" uuid "on thread" thread)
+                (timbre/info "Echoing comment to Slack:" uuid "as a new thread"))
               (let [result (if thread
                               (slack/echo-comment token channel-id thread text)
                               (slack/echo-comment token channel-id text))]
@@ -125,7 +127,9 @@
                   thread (:thread slack-channel)
                   text (:body interaction)
                   author (-> message :author :name)]
-              (timbre/info "Proxying comment to Slack:" uuid)
+              (if thread
+                (timbre/info "Proxying comment to Slack:" uuid "on thread:" thread)
+                (timbre/info "Proxying comment to Slack:" uuid "as a new thread"))
               (let [result (if thread
                               (slack/proxy-comment token channel-id thread text author)
                               (slack/proxy-comment token channel-id text author))]
