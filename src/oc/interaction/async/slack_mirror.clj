@@ -34,7 +34,7 @@
 
 (def entry-table-name "entries")
 
-(defn handle-mirror-result
+(defn- handle-mirror-result
   "Store Slack thread (ts) in interaction for future replies."
   [db-pool result slack-channel interaction]
   (when-not (:thread slack-channel) ; nothing to do if comment already has a Slack thread
@@ -43,7 +43,7 @@
       (pool/with-pool [conn db-pool]
         (db-common/update-resource conn entry-table-name :uuid (:entry-uuid interaction) {:slack-thread slack-thread})))))
 
-(defn handle-message
+(defn- handle-message
   "
   Look for an entry for the specified channel-id and thread. If one exists, create a new comment for
   the Slack message.
@@ -56,12 +56,12 @@
       (timbre/debug "Found entry:" (:uuid entry) "for slack thread:" thread "on channel:" channel-id)
       (>!! persist-chan {:entry entry :message body})))) ;; request to create the comment
 
-(defn persist-message-as-comment
-  ""
+(defn- persist-message-as-comment
+  "Persist a new comment as a mirror of the incoming Slack message."
   [db-pool entry message]
   ;; Get the user
   (timbre/info "Looking up Slack user:" (-> message :event :user))
-  ;; TODO
+  ;; TODO look up the Slack user
 
   ;; Create the comment
   (timbre/info "Creating a new comment for entry:" (:uuid entry))
@@ -72,8 +72,8 @@
   
 ;; ----- Event loops (outgoing to Slack) -----
 
-(defn echo-loop 
-  "core.async consumer to echo messages to Slack as the user."
+(defn- echo-loop 
+  "Start a core.async consumer to echo messages to Slack as the user."
   [db-pool]
   (reset! echo-go true)
   (async/go (while @echo-go
@@ -106,7 +106,7 @@
             (catch Exception e
               (timbre/error e)))))))))
 
-(defn proxy-loop
+(defn- proxy-loop
   "core.async consumer to proxy messages to Slack as the bot on behalf of the user."
   [db-pool]
   (reset! proxy-go true)
@@ -143,7 +143,7 @@
 
 ;; ----- Event loops (incoming from Slack) -----
 
-(defn incoming-loop 
+(defn- incoming-loop 
   "core.async consumer to echo messages to Slack as the user."
   [db-pool]
   (reset! incoming-go true)
@@ -163,7 +163,7 @@
             (catch Exception e
               (timbre/error e)))))))))
 
-(defn persist-loop 
+(defn- persist-loop 
   "core.async consumer to persist a Slack message as a comment."
   [db-pool]
   (reset! persist-go true)

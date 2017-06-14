@@ -72,7 +72,7 @@
     c/hot-reload      wrap-reload))
 
 (defn start
-  "Start a development server"
+  "Start an instance of the Interaction service."
   [port]
 
   ;; Stuff logged at error level goes to Sentry
