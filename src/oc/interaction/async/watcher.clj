@@ -1,4 +1,4 @@
-(ns oc.interaction.lib.watcher
+(ns oc.interaction.async.watcher
   "
   Track which web socket connections are 'watching' which items.
 
@@ -10,12 +10,15 @@
   "
   (:require [clojure.core.async :as async :refer [<!! >!!]]
             [defun.core :refer (defun-)]
-            [taoensso.timbre :as timbre]))
+            [taoensso.timbre :as timbre]
+            [oc.interaction.representations.interaction :as interact-rep]))
 
-(def watcher-chan (async/chan 10000)) ; buffered channel
-(def sender-chan (async/chan 10000)) ; buffered channel
+;; ----- core.async -----
 
-(def forever true) ; makes Eastwood happy to have a forever while loop be "conditional" on something
+(defonce watcher-chan (async/chan 10000)) ; buffered channel
+(defonce sender-chan (async/chan 10000)) ; buffered channel
+
+(defonce watcher-go (atom nil))
 
 ;; ----- Storage atom and functions -----
 
@@ -31,6 +34,21 @@
 
 (defn watchers-for [watch-id]
   (vec (get @watchers watch-id)))
+
+;; ----- Actions -----
+
+(defn notify-watcher
+  "Given an event, an interaction and an optional reeaction count, notify the watcher with core.async."
+  [event interaction reaction-count]
+  (timbre/info "Sending:" event "to the watcher for:" (:uuid interaction))
+  (let [initial-payload {:topic (:topic-slug interaction)
+                         :entry-uuid (:entry-uuid interaction)
+                         :interaction (interact-rep/interaction-representation interaction :none)}
+        payload (if reaction-count (assoc initial-payload :count reaction-count) initial-payload)]
+    (>!! watcher-chan {:send true
+                       :watch-id (:board-uuid interaction)
+                       :event event
+                       :payload payload})))
 
 ;; ----- Event handling -----
 
@@ -71,11 +89,30 @@
 
 ;; ----- Watcher event loop -----
 
-(async/go (while forever
-  (timbre/debug "Watcher waiting...")
-  (let [message (<!! watcher-chan)]
-    (timbre/debug "Processing message on watcher channel...")
-    (try
-      (handle-watch-message message)
-      (catch Exception e
-        (timbre/error e))))))
+(defn watcher-loop []
+  (reset! watcher-go true)
+  (async/go (while @watcher-go
+    (timbre/debug "Watcher waiting...")
+    (let [message (<!! watcher-chan)]
+      (timbre/debug "Processing message on watcher channel...")
+      (if (:stop message)
+        (do (reset! watcher-go false) (timbre/info "Watcher stopped."))
+        (async/thread
+          (try
+            (handle-watch-message message)
+          (catch Exception e
+            (timbre/error e)))))))))
+
+;; ----- Component start/stop -----
+
+(defn start
+  "Start the core.async channel consumer for watching items."
+  []
+  (watcher-loop))
+
+(defn stop
+  "Stop the core.async channel consumer for watching items."
+  []
+  (when @watcher-go
+    (timbre/info "Stopping watcher...")
+    (>!! watcher-chan {:stop true})))
