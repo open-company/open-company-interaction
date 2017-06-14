@@ -23,7 +23,7 @@
     [compojure "1.6.0"] ; Web routing https://github.com/weavejester/compojure
     [clj-http "3.6.1"] ; HTTP client https://github.com/dakrone/clj-http
     
-    [open-company/lib "0.11.9"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    [open-company/lib "0.11.11"] ; Library for OC projects https://github.com/open-company/open-company-lib
     ; In addition to common functions, brings in the following common dependencies used by this project:
     ; httpkit - Web server http://http-kit.org/
     ; core.async - Async programming and communication https://github.com/clojure/core.async
