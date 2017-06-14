@@ -7,7 +7,11 @@
             [taoensso.sente.server-adapters.http-kit :refer (get-sch-adapter)]
             [oc.lib.jwt :as jwt]
             [oc.interaction.config :as c]
-            [oc.interaction.lib.watcher :as watcher]))
+            [oc.interaction.async.watcher :as watcher]))
+
+;; ----- core.async -----
+
+(defonce sender-go (atom true))
 
 ;; ----- Sente server setup -----
 
@@ -42,22 +46,20 @@
 (defn event-msg-handler
   "Wraps `-event-msg-handler` with logging, error catching, etc."
   [{:as ev-msg :keys [id ?data event]}]
-  (timbre/debug "[websocket]" event id ?data)
-  (-event-msg-handler ev-msg) ; Handle event-msgs on a single thread
-  ;; (future (-event-msg-handler ev-msg)) ; Handle event-msgs on a thread pool
-  )
+  (timbre/trace "[websocket]" event id ?data)
+  (-event-msg-handler ev-msg))
 
 (defmethod -event-msg-handler
   ;; Default/fallback case (no other matching handler)
   :default
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
-  (timbre/debug "[websocket] unhandled event " event "for" id)
+  (timbre/trace "[websocket] unhandled event " event "for" id)
   (when ?reply-fn
     (?reply-fn {:umatched-event-as-echoed-from-from-server event})))
 
 (defmethod -event-msg-handler :chsk/handshake
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
-  (timbre/debug "[websocket] chsk/handshake" event id ?data)
+  (timbre/trace "[websocket] chsk/handshake" event id ?data)
   (when ?reply-fn
     (?reply-fn {:umatched-event-as-echoed-from-from-server event})))
 
@@ -82,31 +84,37 @@
     (timbre/info "[websocket] chsk/uidport-close for board" board-uuid "by" client-id)
     (>!! watcher/watcher-chan {:unwatch true :watch-id board-uuid :client-id client-id})))
 
-;; ----- Sente router event loop (incoming) -----
+;; ----- Sente router event loop (incoming from Sente/WebSocket) -----
 
 (defonce router_ (atom nil))
 
-(defn  stop-router! [] (when-let [stop-fn @router_] (stop-fn)))
+(defn- stop-router! []
+  (when-let [stop-fn @router_]
+    (stop-fn)))
 
-(defn start-router! []
+(defn- start-router! []
   (stop-router!)
   (reset! router_
     (sente/start-server-chsk-router!
       ch-chsk event-msg-handler)))
 
-;; ----- Sender event loop (outgoing) -----
+;; ----- Sender event loop (outgoing to Sente/WebSocket) -----
 
-(async/go (while watcher/forever
-  (timbre/debug "Sender waiting...")
-  (let [message (<!! watcher/sender-chan)]
-    (timbre/debug "Processing message on sender channel...")
-    (try
-      (let [event (:event message)
-            id (:id message)]
-        (timbre/info "[websocket] sending:" (first event) "to:" id)
-        (chsk-send! id event))
-      (catch Exception e
-        (timbre/error e))))))
+(defn sender-loop []
+  (async/go (while @sender-go
+    (timbre/debug "Sender waiting...")
+    (let [message (<!! watcher/sender-chan)]
+      (timbre/debug "Processing message on sender channel...")
+      (if (:stop message)
+        (do (reset! sender-go false) (timbre/info "Sender stopped."))
+        (async/thread
+          (try
+            (let [event (:event message)
+                  id (:id message)]
+              (timbre/info "[websocket] sending:" (first event) "to:" id)
+              (chsk-send! id event))
+            (catch Exception e
+              (timbre/error e)))))))))
 
 ;; ----- Ring routes -----
 
@@ -114,3 +122,21 @@
   (compojure/routes
     (GET "/interaction-socket/boards/:board-uuid" req (ring-ajax-get-or-ws-handshake req))
     (POST "/interaction-socket/boards/:board-uuid" req (ring-ajax-post req))))
+
+;; ----- Component start/stop -----
+
+(defn start
+  "Start the incoming WebSocket frame router and the cor.async loop for sending outgoing WebSocket frames."
+  []
+  (start-router!)
+  (sender-loop))
+
+(defn stop
+  "Stop the incoming WebSocket frame router and the cor.async loop for sending outgoing WebSocket frames."
+  []
+  (timbre/info "Stopping incoming websocket router...")
+  (stop-router!)
+  (timbre/info "Router stopped.")
+  (when @sender-go
+    (timbre/info "Stopping sender...")
+    (>!! watcher/sender-chan {:stop true})))

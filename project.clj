@@ -17,12 +17,13 @@
     [org.clojure/tools.cli "0.3.5"] ; Command-line parsing https://github.com/clojure/tools.cli
     [ring/ring-devel "1.6.1"] ; Web application library https://github.com/ring-clojure/ring
     [ring/ring-core "1.6.1"] ; Web application library https://github.com/ring-clojure/ring
+    [ring/ring-json "0.5.0-beta1"] ; JSON request/response https://github.com/ring-clojure/ring-json
     [jumblerg/ring.middleware.cors "1.0.1"] ; CORS library https://github.com/jumblerg/ring.middleware.cors
     [ring-logger-timbre "0.7.5" :exclusions [com.taoensso/encore]] ; Ring logging https://github.com/nberger/ring-logger-timbre
     [compojure "1.6.0"] ; Web routing https://github.com/weavejester/compojure
     [clj-http "3.6.1"] ; HTTP client https://github.com/dakrone/clj-http
     
-    [open-company/lib "0.11.8"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    [open-company/lib "0.11.9"] ; Library for OC projects https://github.com/open-company/open-company-lib
     ; In addition to common functions, brings in the following common dependencies used by this project:
     ; httpkit - Web server http://http-kit.org/
     ; core.async - Async programming and communication https://github.com/clojure/core.async
@@ -62,7 +63,6 @@
         [midje "1.9.0-alpha6"] ; Example-based testing https://github.com/marick/Midje
         [ring-mock "0.1.5"] ; Test Ring requests https://github.com/weavejester/ring-mock
         [philoskim/debux "0.2.1"] ; `dbg` macro around -> or let https://github.com/philoskim/debux
-        [stylefruits/gniazdo "1.0.0"] ; WebSocket test client https://github.com/stylefruits/gniazdo
       ]
       :plugins [
         [lein-midje "3.2.1"] ; Example-based testing https://github.com/marick/lein-midje
@@ -82,6 +82,7 @@
         :aws-secret-access-key "CHANGE-ME"
         :aws-sqs-bot-queue "CHANGE-ME"
         :aws-sqs-email-queue "CHANGE-ME"
+        :log-level "debug"
       }
       :plugins [
         [lein-bikeshed "0.4.1"] ; Check for code smells https://github.com/dakrone/lein-bikeshed
@@ -134,7 +135,6 @@
   :repl-options {
     :welcome (println (str "\n" (slurp (clojure.java.io/resource "ascii_art.txt")) "\n"
                       "OpenCompany Interaction REPL\n"
-                      "Database: " oc.interaction.config/db-name "\n"
                       "\nReady to do your bidding... I suggest (go) or (go <port>) as your first command.\n"))
     :init-ns dev
   }
@@ -156,8 +156,11 @@
   ;; ----- Code check configuration -----
 
   :eastwood {
-    ;; Disable some linters that are enabled by default
-    :exclude-linters [:constant-test :wrong-arity]
+    ;; Disable some linters that are enabled by default:
+    ;; contant-test - just seems mostly ill-advised, logical constants are useful in something like a `->cond` 
+    ;; deprecations - the useful `either` from Prismatic schema is deprecated, we'll eventually switch to clojure.spec
+    :exclude-linters [:constant-test :deprecations]
+
     ;; Enable some linters that are disabled by default
     :add-linters [:unused-namespaces :unused-private-vars] ; :unused-locals]
 
