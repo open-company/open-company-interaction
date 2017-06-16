@@ -9,6 +9,7 @@
             [oc.lib.schema :as lib-schema]
             [oc.interaction.config :as config]
             [oc.interaction.api.common :as common]
+            [oc.interaction.async.watcher :as watcher]
             [oc.interaction.representations.interaction :as interact-rep]
             [oc.interaction.resources.interaction :as interact-res]))
 
@@ -57,7 +58,10 @@
   (timbre/info "Deleting comment:" comment-uuid)
   (if-let* [existing-comment (:existing-comment ctx)
             _delete-result (interact-res/delete-interaction! conn comment-uuid)]
-    (do (timbre/info "Deleted entry:" comment-uuid) true)
+    (do 
+      (timbre/info "Deleted entry:" comment-uuid)
+      (watcher/notify-watcher :interaction-comment/delete existing-comment)
+      true)
     (do (timbre/info "Failed deleting entry:" comment-uuid) false)))
 
 ;; ----- Resources - see: http://clojure-liberator.github.io/liberator/assets/img/decision-graph.svg

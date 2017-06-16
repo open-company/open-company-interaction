@@ -39,7 +39,10 @@
 
 (defn notify-watcher
   "Given an event, an interaction and an optional reeaction count, notify the watcher with core.async."
-  [event interaction reaction-count]
+  
+  ([event interaction] (notify-watcher event interaction false))
+
+  ([event interaction reaction-count]
   (timbre/info "Sending:" event "to the watcher for:" (:uuid interaction))
   (let [initial-payload {:topic (:topic-slug interaction)
                          :entry-uuid (:entry-uuid interaction)
@@ -48,7 +51,7 @@
     (>!! watcher-chan {:send true
                        :watch-id (:board-uuid interaction)
                        :event event
-                       :payload payload})))
+                       :payload payload}))))
 
 ;; ----- Event handling -----
 
@@ -80,7 +83,9 @@
   (let [watch-id (:watch-id message)]
     (timbre/info "Send request for:" watch-id)
     (let [client-ids (watchers-for watch-id)]
-      (timbre/debug "Send request to:" client-ids)
+      (if (empty? client-ids)
+        (timbre/debug "No watchers for:" watch-id)
+        (timbre/debug "Send request to:" client-ids))
       (doseq [client-id client-ids]
         (send-event client-id (:event message) (:payload message))))))
 

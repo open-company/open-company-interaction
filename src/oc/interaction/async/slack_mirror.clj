@@ -68,7 +68,7 @@
   (pool/with-pool [conn db-pool]
     (if-let [result (interact-res/create-comment! conn (interact-res/->comment entry {:body (-> message :event :text)}
                       {:user-id "0000-0000-0000" :name "Slack user" :avatar-url nil}))]
-      (watcher/notify-watcher :interaction-comment/add result false))))
+      (watcher/notify-watcher :interaction-comment/add result))))
   
 ;; ----- Event loops (outgoing to Slack) -----
 
