@@ -29,14 +29,23 @@
   (str (url (:org-uuid interaction) (:board-uuid interaction) (:topic-slug interaction) (:entry-uuid interaction))
     "/comments/" (:uuid interaction))))
 
-(defn- self-link [interaction] (hateoas/self-link (url interaction) {:accept comment-media-type}))
+(defn- update-link [interaction] (hateoas/partial-update-link (url interaction) {:content-type comment-media-type
+                                                                       :accept comment-media-type}))
+
+(defn- delete-link [interaction] (hateoas/delete-link (url interaction)))
 
 (defn- interaction-links [interaction access-level]
-  (assoc interaction :links [(self-link interaction)]))
+  (let [links (if (= access-level :author) [(update-link interaction) (delete-link interaction)] [])]
+    (assoc interaction :links links)))
 
 (defun- reaction-link 
-  ([reaction-url true] (hateoas/link-map "react" hateoas/DELETE reaction-url {:accept reaction-media-type}))
+  ([reaction-url true] (hateoas/link-map "react" hateoas/DELETE reaction-url {}))
   ([reaction-url false] (hateoas/link-map "react" hateoas/PUT reaction-url {:accept reaction-media-type})))
+
+(defn- access
+  "Return `:author` if the specified interaction was authored by the specified user and `:none` if not."
+  [interaction user]
+  (if (= (-> interaction :author :user-id) (:user-id user)) :author :none))
 
 (defn interaction-representation
   "Given an interaction, create a representation."
@@ -64,7 +73,7 @@
       {:collection {:version hateoas/json-collection-version
                     :href collection-url
                     :links links
-                    :items (map #(select-keys (interaction-links % :none) (conj representation-props :links))
+                    :items (map #(select-keys (interaction-links % (access % user)) (conj representation-props :links))
                               interactions)}}
         {:pretty config/pretty?})))
 
