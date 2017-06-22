@@ -11,12 +11,18 @@
   "
   (:require [clojure.core.async :as async :refer [<!! >!!]]
             [clojure.walk :refer (keywordize-keys)]
+            [clojure.string :as s]
+            [if-let.core :refer (if-let*)]
             [taoensso.timbre :as timbre]
             [oc.lib.db.pool :as pool]
             [oc.lib.slack :as slack]
             [oc.lib.db.common :as db-common]
+            [oc.interaction.config :as c]
             [oc.interaction.async.watcher :as watcher]
             [oc.interaction.resources.interaction :as interact-res]))
+
+(def echo-intro "I have a comment about:")
+(def proxy-intro "There's a discussion about:")
 
 ;; ----- core.async -----
 
@@ -29,6 +35,29 @@
 (defonce proxy-go (atom nil))
 (defonce incoming-go (atom nil))
 (defonce persist-go (atom nil))
+
+;; ----- Utility functions -----
+
+(defn- initial-message
+  "
+  Given the text of a comment to go to Slack and the comment, make Slack message text that includes an explanation and
+  link to the entry before the message text.
+
+  Update link: /<org-slug>/<board-slug>/<entry-uuid>
+  "
+  [intro text entry interaction]
+  (if-let* [org-slug (:org-slug entry)
+            board-slug (:board-slug entry)
+            entry-uuid (:uuid entry)
+            headline (:headline entry)
+            entry-url (s/join "/" [c/ui-server-url org-slug board-slug entry-uuid])]
+
+    (str intro " <" entry-url "|" headline ">\n> " text)
+    
+    ;; Not expected to be here, but let's not completely crap the bed
+    (do 
+      (timbre/error "Unable to make Slack link for comment:" (:uuid interaction))
+      text)))
 
 ;; ----- DB Persistence -----
 
@@ -87,6 +116,7 @@
             (let [slack-user (:slack-user message)
                   token (:token slack-user)
                   interaction (:comment message)
+                  entry (:entry message)
                   uuid (:uuid interaction)
                   slack-channel (:slack-channel message)
                   channel-id (:channel-id slack-channel)
@@ -96,8 +126,8 @@
                 (timbre/info "Echoing comment to Slack:" uuid "on thread" thread)
                 (timbre/info "Echoing comment to Slack:" uuid "as a new thread"))
               (let [result (if thread
-                              (slack/echo-comment token channel-id thread text)
-                              (slack/echo-comment token channel-id text))]
+                              (slack/echo-message token channel-id thread text)
+                              (slack/echo-message token channel-id (initial-message echo-intro text entry interaction)))]
                 (if (:ok result)
                   (do 
                     (timbre/info "Echoed to Slack:" uuid)
@@ -121,18 +151,19 @@
             (let [slack-bot (:slack-bot message)
                   token (:token slack-bot)
                   interaction (:comment message)
+                  entry (:entry message)
                   uuid (:uuid interaction)
                   slack-channel (:slack-channel message)
                   channel-id (:channel-id slack-channel)
                   thread (:thread slack-channel)
-                  text (:body interaction)
-                  author (-> message :author :name)]
+                  author (-> message :author :name)
+                  text (str author " said: " (:body interaction))]
               (if thread
                 (timbre/info "Proxying comment to Slack:" uuid "on thread:" thread)
                 (timbre/info "Proxying comment to Slack:" uuid "as a new thread"))
               (let [result (if thread
-                              (slack/proxy-comment token channel-id thread text author)
-                              (slack/proxy-comment token channel-id text author))]
+                              (slack/proxy-message token channel-id thread text)
+                              (slack/proxy-message token channel-id (initial-message proxy-intro text entry interaction)))]
                 (if (:ok result)
                   (do
                     (timbre/info "Proxied to Slack:" uuid)

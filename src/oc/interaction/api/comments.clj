@@ -54,6 +54,17 @@
 
 ;; ----- Actions -----
 
+(defn- update-comment [conn ctx comment-uuid]
+  (timbre/info "Updating comment:" comment-uuid)
+  (if-let* [updated-comment (:updated-comment ctx)
+            _updated-result (interact-res/update-interaction! conn (:uuid updated-comment) updated-comment)]
+    (do 
+      (timbre/info "Updated comment:" comment-uuid)
+      (watcher/notify-watcher :interaction-comment/update updated-comment)
+      {:updated-entry updated-comment})
+
+    (do (timbre/error "Failed updating comment:" comment-uuid) false)))
+
 (defn- delete-comment [conn ctx comment-uuid]
   (timbre/info "Deleting comment:" comment-uuid)
   (if-let* [existing-comment (:existing-comment ctx)
@@ -88,7 +99,7 @@
   ;; Validations
   :processable? (by-method {
     :options true
-    :patch (fn [ctx] (valid-comment-update? conn ctx comment-uuid))
+    :patch (fn [ctx] (valid-comment-update? conn ctx comment-uuid (:data ctx)))
     :delete true})
 
   ;; Existentialism
@@ -104,13 +115,12 @@
                         false))
 
   ;; Actions
-  :patch! true
+  :patch! (fn [ctx] (when (:existing? ctx) (update-comment conn ctx comment-uuid)))
   :delete! (fn [ctx] (when (:existing? ctx) (delete-comment conn ctx comment-uuid)))
 
   ;; Responses
-  :handle-ok "foo"
-  :handle-no-content (fn [ctx] (when-not (:existing? ctx) (api-common/missing-response)))
-)
+  :handle-ok (fn [ctx] (interact-rep/render-interaction (:updated-comment ctx) :author))
+  :handle-no-content (fn [ctx] (when-not (:existing? ctx) (api-common/missing-response))))
 
 ;; A resource for operations on a list of comments
 (defresource comment-list [conn org-uuid board-uuid topic-slug entry-uuid]
