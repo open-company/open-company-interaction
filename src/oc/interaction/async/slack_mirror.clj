@@ -21,8 +21,8 @@
             [oc.interaction.async.watcher :as watcher]
             [oc.interaction.resources.interaction :as interact-res]))
 
-(def echo-intro "I have a comment about:")
-(def proxy-intro "There's a discussion about:")
+(def echo-intro "commenting on:")
+(def proxy-intro "There's a comment on:")
 
 ;; ----- core.async -----
 
