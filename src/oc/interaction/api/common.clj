@@ -32,7 +32,8 @@
 (defn- echo-comment
   "Given a decoded JWToken and a comment, mirror it to Slack as the user."
   [user entry interaction]
-  (>!! mirror/echo-chan {:slack-user (slack-user user)
+  (>!! mirror/echo-chan {:slack-bot (slack-bot user)
+                         :slack-user (slack-user user)
                          :comment interaction
                          :entry entry
                          :slack-channel (assoc slack-mirror :thread (-> entry :slack-thread :thread))}))
