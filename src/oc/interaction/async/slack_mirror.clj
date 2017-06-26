@@ -32,7 +32,7 @@
 (def default-slack-author {
   :user-id "0000-0000-0000"
   :name "Slack User"
-  :avatar-url nil})
+  :avatar-url (str c/web-cdn-url "/img/ML/happy_face_red.png")})
 
 ;; ----- core.async -----
 
@@ -84,7 +84,8 @@
                           (get-in user-data [:profile :image_72])
                           (get-in user-data [:profile :image_48])
                           (get-in user-data [:profile :image_32])
-                          (get-in user-data [:profile :image_24])))]
+                          (get-in user-data [:profile :image_24])
+                          (:avatar-url default-slack-author)))]
     (if user-data
       (merge init-author {:name user-name :avatar-url avatar-url})
       init-author)))
