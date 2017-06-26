@@ -155,7 +155,7 @@
   "Given the UUID of the entry, return the interactions (sorted by :created-at)."
   [conn entry-uuid :- lib-schema/UniqueID]
   {:pre [(db-common/conn? conn)]}
-  (db-common/read-resources conn table-name :entry-uuid entry-uuid))
+  (sort-by :created-at (db-common/read-resources conn table-name :entry-uuid entry-uuid)))
 
 (schema/defn ^:always-validate get-comments-by-entry
   "Given the UUID of the entry, return the comments (sorted by :created-at)."

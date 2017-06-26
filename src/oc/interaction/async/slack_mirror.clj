@@ -11,24 +11,105 @@
   "
   (:require [clojure.core.async :as async :refer [<!! >!!]]
             [clojure.walk :refer (keywordize-keys)]
+            [clojure.string :as s]
+            [clojure.core.cache :as cache]
+            [if-let.core :refer (if-let*)]
             [taoensso.timbre :as timbre]
             [oc.lib.db.pool :as pool]
             [oc.lib.slack :as slack]
             [oc.lib.db.common :as db-common]
+            [oc.interaction.config :as c]
             [oc.interaction.async.watcher :as watcher]
             [oc.interaction.resources.interaction :as interact-res]))
+
+;; ----- Slack message copy -----
+
+(def echo-intro "commenting on:")
+(def proxy-intro "There's a comment on:")
+
+;; ----- Slack defaults -----
+
+(def default-slack-author {
+  :user-id "0000-0000-0000"
+  :name "Slack User"
+  :avatar-url (str c/web-cdn-url "/img/ML/happy_face_red.png")})
 
 ;; ----- core.async -----
 
 (defonce echo-chan (async/chan 10000)) ; buffered channel
 (defonce proxy-chan (async/chan 10000)) ; buffered channel
 (defonce incoming-chan (async/chan 10000)) ; buffered channel
+(defonce lookup-chan (async/chan 10000)) ; buffered channel
 (defonce persist-chan (async/chan 10000)) ; buffered channel
 
 (defonce echo-go (atom nil))
 (defonce proxy-go (atom nil))
 (defonce incoming-go (atom nil))
+(defonce lookup-go (atom nil))
 (defonce persist-go (atom nil))
+
+;; ----- Slack user lookup cache -----
+
+(defonce empty-cache (cache/lu-cache-factory {} :threshold 10000))
+(defonce SlackUserCache (atom empty-cache))
+
+;; ----- Utility functions -----
+
+(defn- present? [key coll]
+  (let [val (get coll key)]
+    (if (s/blank? (str val)) false val)))
+
+(defn- lookup-message-author
+  "Given a Slack user ID and a bot-token, lookup the user with Slack API and return their info."
+  [bot-token slack-user-id]
+  (timbre/debug "Slack lookup of:" slack-user-id "with:" bot-token)
+  (let [init-author default-slack-author
+        user-data (when bot-token (slack/get-user-info bot-token slack-user-id))
+        user-name (when user-data
+                    (or (present? :real_name_normalized user-data)
+                        (present? :real_name user-data)
+                        (present? :first_name user-data)
+                        (present? :last_name user-data)
+                        (present? :name user-data)
+                        (:name default-slack-author)))
+        avatar-url (when user-data
+                      (or (:image_512 user-data)
+                          (:image_192 user-data)
+                          (:image_72 user-data)
+                          (:image_48 user-data)
+                          (:image_32 user-data)
+                          (:image_24 user-data)
+                          (get-in user-data [:profile :image_512])
+                          (get-in user-data [:profile :image_192])
+                          (get-in user-data [:profile :image_72])
+                          (get-in user-data [:profile :image_48])
+                          (get-in user-data [:profile :image_32])
+                          (get-in user-data [:profile :image_24])
+                          (:avatar-url default-slack-author)))]
+    (if user-data
+      (merge init-author {:name user-name :avatar-url avatar-url})
+      init-author)))
+ 
+(defn- initial-message
+  "
+  Given the text of a comment to go to Slack and the comment, make Slack message text that includes an explanation and
+  link to the entry before the message text.
+
+  Update link: /<org-slug>/<board-slug>/<entry-uuid>
+  "
+  [intro text entry interaction]
+  (if-let* [org-slug (:org-slug entry)
+            board-slug (:board-slug entry)
+            entry-uuid (:uuid entry)
+            headline (:headline entry)
+            entry-url (s/join "/" [c/ui-server-url org-slug board-slug entry-uuid])]
+
+    (str intro " <" entry-url "|" headline ">\n> " text)
+    
+    ;; Not expected to be here, but let's not completely crap the bed
+    (do 
+      (timbre/error "Unable to make Slack link for comment:" (:uuid interaction))
+      text)))
 
 ;; ----- DB Persistence -----
 
@@ -54,21 +135,18 @@
     (when-let [entry (first (db-common/read-resources conn entry-table-name
                             "slack-thread-channel-id-thread" [[channel-id thread]]))]
       (timbre/debug "Found entry:" (:uuid entry) "for slack thread:" thread "on channel:" channel-id)
-      (>!! persist-chan {:entry entry :message body})))) ;; request to create the comment
+      ;; request to lookup the comment's author
+      (>!! lookup-chan {:entry entry :message body}))))
 
 (defn- persist-message-as-comment
   "Persist a new comment as a mirror of the incoming Slack message."
-  [db-pool entry message]
-  ;; Get the user
-  (timbre/info "Looking up Slack user:" (-> message :event :user))
-  ;; TODO look up the Slack user
-
+  [db-pool entry message author]
   ;; Create the comment
   (timbre/info "Creating a new comment for entry:" (:uuid entry))
   (pool/with-pool [conn db-pool]
     (if-let [result (interact-res/create-comment! conn (interact-res/->comment entry {:body (-> message :event :text)}
-                      {:user-id "0000-0000-0000" :name "Slack user" :avatar-url nil}))]
-      (watcher/notify-watcher :interaction-comment/add result false))))
+                      author))]
+      (watcher/notify-watcher :interaction-comment/add result))))
   
 ;; ----- Event loops (outgoing to Slack) -----
 
@@ -84,11 +162,15 @@
         (do (reset! echo-go false) (timbre/info "Slack echo stopped."))
         (async/thread
           (try
-            (let [slack-user (:slack-user message)
+            (let [slack-bot (:slack-bot message)
+                  bot-token (:token slack-bot)
+                  slack-user (:slack-user message)
                   token (:token slack-user)
                   interaction (:comment message)
+                  entry (:entry message)
                   uuid (:uuid interaction)
-                  slack-channel (:slack-channel message)
+                  channel (:slack-channel message)
+                  slack-channel (if bot-token (assoc channel :bot-token bot-token) channel)
                   channel-id (:channel-id slack-channel)
                   thread (:thread slack-channel)
                   text (:body interaction)]
@@ -96,8 +178,8 @@
                 (timbre/info "Echoing comment to Slack:" uuid "on thread" thread)
                 (timbre/info "Echoing comment to Slack:" uuid "as a new thread"))
               (let [result (if thread
-                              (slack/echo-comment token channel-id thread text)
-                              (slack/echo-comment token channel-id text))]
+                              (slack/echo-message token channel-id thread text)
+                              (slack/echo-message token channel-id (initial-message echo-intro text entry interaction)))]
                 (if (:ok result)
                   (do 
                     (timbre/info "Echoed to Slack:" uuid)
@@ -119,20 +201,23 @@
         (async/thread
           (try
             (let [slack-bot (:slack-bot message)
+                  bot-token (:token slack-bot)
                   token (:token slack-bot)
                   interaction (:comment message)
+                  entry (:entry message)
                   uuid (:uuid interaction)
-                  slack-channel (:slack-channel message)
+                  channel (:slack-channel message)
+                  slack-channel (if bot-token (assoc channel :bot-token bot-token) channel)
                   channel-id (:channel-id slack-channel)
                   thread (:thread slack-channel)
-                  text (:body interaction)
-                  author (-> message :author :name)]
+                  author (-> message :author :name)
+                  text (str author " said: " (:body interaction))]
               (if thread
                 (timbre/info "Proxying comment to Slack:" uuid "on thread:" thread)
                 (timbre/info "Proxying comment to Slack:" uuid "as a new thread"))
               (let [result (if thread
-                              (slack/proxy-comment token channel-id thread text author)
-                              (slack/proxy-comment token channel-id text author))]
+                              (slack/proxy-message token channel-id thread text)
+                              (slack/proxy-message token channel-id (initial-message proxy-intro text entry interaction)))]
                 (if (:ok result)
                   (do
                     (timbre/info "Proxied to Slack:" uuid)
@@ -144,7 +229,7 @@
 ;; ----- Event loops (incoming from Slack) -----
 
 (defn- incoming-loop 
-  "core.async consumer to echo messages to Slack as the user."
+  "core.async consumer to handle incoming Slack messages."
   [db-pool]
   (reset! incoming-go true)
   (async/go (while @incoming-go
@@ -163,6 +248,36 @@
             (catch Exception e
               (timbre/error e)))))))))
 
+(defn- lookup-loop 
+  "core.async consumer to lookup Slack users using Slack API and our cache."
+  []
+  (reset! lookup-go true)
+  (async/go (while @lookup-go
+    (timbre/debug "Slack lookup waiting...")
+    (let [message (<!! lookup-chan)]
+      (timbre/debug "Processing message on lookup channel...")
+      (if (:stop message)
+        (do (reset! lookup-go false) (timbre/info "Slack lookup stopped."))
+        (async/thread
+          (try
+            (let [bot-token (-> message :entry :slack-thread :bot-token)
+                  slack-user-id (-> message :message :event :user)]
+
+              (if (cache/has? @SlackUserCache slack-user-id) ; lookup comment's author in cache
+
+                (do
+                  (timbre/debug "Slack user cache hit on:" slack-user-id)
+                  (reset! SlackUserCache (cache/hit @SlackUserCache slack-user-id))) ; update cache with a hit
+            
+                (let [_log (timbre/debug "Slack user cache miss on:" slack-user-id)
+                      author (lookup-message-author bot-token slack-user-id)]
+                  (timbre/debug "Caching Slack user:" slack-user-id "as:" author)
+                  (reset! SlackUserCache (cache/miss @SlackUserCache slack-user-id author)))) ; update cache
+
+              (>!! persist-chan (assoc message :author (cache/lookup @SlackUserCache slack-user-id))))
+            (catch Exception e
+              (timbre/error e)))))))))
+
 (defn- persist-loop 
   "core.async consumer to persist a Slack message as a comment."
   [db-pool]
@@ -175,7 +290,7 @@
         (do (reset! persist-go false) (timbre/info "Slack persist stopped."))
         (async/thread
           (try
-            (persist-message-as-comment db-pool (:entry message) (:message message))
+            (persist-message-as-comment db-pool (:entry message) (:message message) (:author message))
             (catch Exception e
               (timbre/error e)))))))))
 
@@ -188,11 +303,14 @@
     (echo-loop db-pool)
     (proxy-loop db-pool)
     (incoming-loop db-pool)
+    (lookup-loop)
     (persist-loop db-pool)))
 
 (defn stop
   "Stop the core.async channel consumers for mirroring comments with Slack."
   []
+  (timbre/info "Clearing the Slack user cache...")
+  (reset! SlackUserCache empty-cache)
   (when @echo-go
     (timbre/info "Stopping Slack echo...")
     (>!! echo-chan {:stop true}))
@@ -202,6 +320,9 @@
   (when @incoming-go
     (timbre/info "Stopping Slack incoming...")
     (>!! incoming-chan {:stop true}))
+  (when @lookup-go
+    (timbre/info "Stopping Slack lookup...")
+    (>!! lookup-chan {:stop true}))
   (when @persist-go
     (timbre/info "Stopping Slack persist...")
     (>!! persist-chan {:stop true})))

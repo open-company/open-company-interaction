@@ -47,6 +47,11 @@
 (defonce liberator-trace (bool (or (env :liberator-trace) false)))
 (defonce pretty? (not prod?)) ; JSON response as pretty?
 
+;; ----- URLs -----
+
+(defonce ui-server-url (or (env :ui-server-url) "http://localhost:3559"))
+(defonce web-cdn-url (or (env :web-cdn-url) "https://do64qbk3yqbc.cloudfront.net"))
+
 ;; ----- JWT -----
 
 (defonce passphrase (env :open-company-auth-passphrase))

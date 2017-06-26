@@ -32,8 +32,10 @@
 (defn- echo-comment
   "Given a decoded JWToken and a comment, mirror it to Slack as the user."
   [user entry interaction]
-  (>!! mirror/echo-chan {:slack-user (slack-user user)
+  (>!! mirror/echo-chan {:slack-bot (slack-bot user)
+                         :slack-user (slack-user user)
                          :comment interaction
+                         :entry entry
                          :slack-channel (assoc slack-mirror :thread (-> entry :slack-thread :thread))}))
 
 (defn- proxy-comment
@@ -41,6 +43,7 @@
   [user entry interaction]
   (>!! mirror/proxy-chan {:slack-bot (slack-bot user)
                           :comment interaction
+                          :entry entry
                           :slack-channel (assoc slack-mirror :thread (-> entry :slack-thread :thread))
                           :author user}))
 
@@ -100,4 +103,4 @@
               topic-board? ((set (:topics board)) topic-slug)
               entry (db-common/read-resource conn "entries" entry-uuid)
               entry-topic? (= (:topic-slug entry) topic-slug)]
-    entry))
+    (merge entry {:org-slug (:slug org) :board-slug (:slug board)})))
