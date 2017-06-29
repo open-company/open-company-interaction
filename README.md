@@ -22,7 +22,7 @@ To maintain transparency, OpenCompany information is always accessible and easy 
 
 Transparency expectations are changing. Startups need to change as well if they are going to attract and retain savvy employees and investors. Just as open source changed the way we build software, transparency changes how we build successful startups with information that is open, interactive, and always accessible. The OpenCompany platform turns transparency into a competitive advantage.
 
-Like the open companies we promote and support, the [OpenCompany](https://opencompany.com/) platform is completely transparent. The company supporting this effort, OpenCompany, LLC, is an open company. The [platform](https://github.com/open-company/open-company-web) is open source software, and open company data is [open data](https://en.wikipedia.org/wiki/Open_data) accessible through the [Storage Service API](https://github.com/open-company/open-company-api).
+Like the open companies we promote and support, the [OpenCompany](https://opencompany.com/) platform is completely transparent. The company supporting this effort, OpenCompany, LLC, is an open company. The [platform](https://github.com/open-company/open-company-web) is open source software, and open company data is [open data](https://en.wikipedia.org/wiki/Open_data) accessible through the [Storage Service](https://github.com/open-company/open-company-storage).
 
 To get started, head to: [OpenCompany](https://opencompany.com/)
 
@@ -176,7 +176,7 @@ The interaction service is composed of 4 main responsibilites:
 
 ![Interaction Service Diagram](https://cdn.rawgit.com/open-company/open-company-interaction/mainline/docs/Interaction-Service.svg)
 
-The Interaction Service shares a RethinkDB database instance with the [Storage Service](https://github.com/open-company/open-company-api).
+The Interaction Service shares a RethinkDB database instance with the [Storage Service](https://github.com/open-company/open-company-storage).
 
 ![Interaction Schema Diagram](https://cdn.rawgit.com/open-company/open-company-interaction/mainline/docs/Interaction-Schema.svg)
 
@@ -196,7 +196,7 @@ lean eastwood
 
 ## Participation
 
-Please note that this project is released with a [Contributor Code of Conduct](https://github.com/open-company/open-company-api/blob/mainline/CODE-OF-CONDUCT.md). By participating in this project you agree to abide by its terms.
+Please note that this project is released with a [Contributor Code of Conduct](https://github.com/open-company/open-company-storage/blob/mainline/CODE-OF-CONDUCT.md). By participating in this project you agree to abide by its terms.
 
 
 ## License
