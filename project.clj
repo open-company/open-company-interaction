@@ -55,7 +55,7 @@
     ;; QA environment and dependencies
     :qa {
       :env {
-        :db-name "open_company_qa"
+        :db-name "open_company_storage_qa"
         :liberator-trace "false"
         :hot-reload "false"
         :open-company-auth-passphrase "this_is_a_qa_secret" ; JWT secret
@@ -75,7 +75,7 @@
     ;; Dev environment and dependencies
     :dev [:qa {
       :env ^:replace {
-        :db-name "open_company_dev"
+        :db-name "open_company_storage_dev"
         :liberator-trace "true" ; liberator debug data in HTTP response headers
         :hot-reload "true" ; reload code when changed on the file system
         :open-company-auth-passphrase "this_is_a_dev_secret" ; JWT secret
@@ -125,7 +125,7 @@
     ;; Production environment
     :prod {
       :env {
-        :db-name "open_company"
+        :db-name "open_company_storage"
         :env "production"
         :liberator-trace "false"
         :hot-reload "false"
