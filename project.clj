@@ -1,6 +1,6 @@
 (defproject open-company-interaction "0.1.0-SNAPSHOT"
   :description "OpenCompany Interaction Service"
-  :url "https://opencompany.com/"
+  :url "https://github.com/open-company/open-company-interaction"
   :license {
     :name "Mozilla Public License v2.0"
     :url "http://www.mozilla.org/MPL/2.0/"
