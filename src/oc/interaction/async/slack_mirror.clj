@@ -102,7 +102,7 @@
             board-slug (:board-slug entry)
             entry-uuid (:uuid entry)
             headline (:headline entry)
-            entry-url (s/join "/" [c/ui-server-url org-slug board-slug entry-uuid])]
+            entry-url (s/join "/" [c/ui-server-url org-slug board-slug "update" entry-uuid])]
 
     (str intro " <" entry-url "|" headline ">\n> " text)
     
