@@ -119,10 +119,15 @@
   "Store Slack thread (ts) in interaction for future replies."
   [db-pool result slack-channel interaction]
   (when-not (:thread slack-channel) ; nothing to do if comment already has a Slack thread
-    (let [slack-thread (assoc slack-channel :thread (:ts result))]
-      (timbre/info "Persisting slack thread:" slack-thread "to entry:" (:entry-uuid interaction))
-      (pool/with-pool [conn db-pool]
-        (db-common/update-resource conn entry-table-name :uuid (:entry-uuid interaction) {:slack-thread slack-thread})))))
+    (pool/with-pool [conn db-pool]
+      (if-let* [slack-thread (assoc slack-channel :thread (:ts result))
+                original-entry (db-common/read-resource conn entry-table-name (:entry-uuid interaction))]
+        (do
+          (timbre/info "Persisting slack thread:" slack-thread "to entry:" (:entry-uuid interaction))
+          (db-common/update-resource conn entry-table-name :uuid original-entry
+                                     (merge original-entry {:slack-thread slack-thread}) (:updated-at original-entry)))
+
+        (timbre/error "Unable to persist slack thread:" result "to entry for entry:" (:entry-uuid interaction))))))
 
 (defn- handle-message
   "
