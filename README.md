@@ -178,7 +178,7 @@ The interaction service is composed of 4 main responsibilites:
 
 ![Interaction Service Diagram](https://cdn.rawgit.com/open-company/open-company-interaction/mainline/docs/Interaction-Service.svg)
 
-The Interaction Service shares a RethinkDB database instance with the [Storage Service](https://github.com/open-company/open-company-api).
+The Interaction Service shares a RethinkDB database instance with the [Storage Service](https://github.com/open-company/open-company-storage).
 
 ![Interaction Schema Diagram](https://cdn.rawgit.com/open-company/open-company-interaction/mainline/docs/Interaction-Schema.svg)
 

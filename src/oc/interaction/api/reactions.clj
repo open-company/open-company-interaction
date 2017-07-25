@@ -18,10 +18,9 @@
 
 ;; ----- Actions -----
 
-(defn- create-reaction [conn ctx org-uuid board-uuid topic-slug entry-uuid reaction-unicode reaction-count]
+(defn- create-reaction [conn ctx org-uuid board-uuid entry-uuid reaction-unicode reaction-count]
   (let [interaction-map {:org-uuid org-uuid
                          :board-uuid board-uuid
-                         :topic-slug topic-slug
                          :entry-uuid entry-uuid
                          :reaction reaction-unicode}
         author (:user ctx)]
@@ -30,7 +29,7 @@
 ;; ----- Resources - see: http://clojure-liberator.github.io/liberator/assets/img/decision-graph.svg
 
 ;; A resource for operations on a reaction
-(defresource reaction [conn org-uuid board-uuid topic-slug entry-uuid reaction-unicode]
+(defresource reaction [conn org-uuid board-uuid entry-uuid reaction-unicode]
   (api-common/open-company-authenticated-resource config/passphrase) ; verify validity and presence of required JWToken
 
   :allowed-methods [:options :put :delete]
@@ -45,7 +44,7 @@
 
   ;; Existentialism
   :put-to-existing? true
-  :exists? (fn [ctx] (if (common/entry-exists? conn org-uuid board-uuid topic-slug entry-uuid)
+  :exists? (fn [ctx] (if (common/entry-exists? conn org-uuid board-uuid entry-uuid)
                         (let [reactions (interact-res/get-reactions-by-entry conn entry-uuid reaction-unicode)]
                           {:existing-reactions reactions
                            :existing-reaction (reaction-for-user reactions (-> ctx :user :user-id))})
@@ -58,7 +57,6 @@
                     (create-reaction conn ctx
                                           org-uuid
                                           board-uuid
-                                          topic-slug
                                           entry-uuid
                                           reaction-unicode
                                           (-> ctx :existing-reactions count inc))))
@@ -76,11 +74,11 @@
                                       reactions (if (:created-interaction ctx)
                                                   (conj existing-reactions reaction)
                                                   existing-reactions)]
-                              (interact-rep/render-reaction org-uuid board-uuid topic-slug entry-uuid reaction-unicode
+                              (interact-rep/render-reaction org-uuid board-uuid entry-uuid reaction-unicode
                                 reactions true)
                               (api-common/missing-response)))
   :handle-ok (fn [ctx] (if (:existing-reaction ctx)
-                          (interact-rep/render-reaction org-uuid board-uuid topic-slug entry-uuid reaction-unicode
+                          (interact-rep/render-reaction org-uuid board-uuid entry-uuid reaction-unicode
                             (interact-res/get-reactions-by-entry conn entry-uuid reaction-unicode) false)
                           (api-common/missing-response))))
 
@@ -90,6 +88,6 @@
   (let [db-pool (-> sys :db-pool :pool)]
     (compojure/routes
       ;; Reaction create/delete
-      (ANY "/orgs/:org-uuid/boards/:board-uuid/topics/:topic-slug/entries/:entry-uuid/reactions/:reaction-unicode/on"
-        [org-uuid board-uuid topic-slug entry-uuid reaction-unicode]
-        (pool/with-pool [conn db-pool] (reaction conn org-uuid board-uuid topic-slug entry-uuid reaction-unicode))))))
+      (ANY "/orgs/:org-uuid/boards/:board-uuid/entries/:entry-uuid/reactions/:reaction-unicode/on"
+        [org-uuid board-uuid entry-uuid reaction-unicode]
+        (pool/with-pool [conn db-pool] (reaction conn org-uuid board-uuid entry-uuid reaction-unicode))))))

@@ -21,7 +21,6 @@
   :uuid lib-schema/UniqueID
   :org-uuid lib-schema/UniqueID
   :board-uuid lib-schema/UniqueID
-  :topic-slug lib-schema/NonBlankStr
   :entry-uuid lib-schema/UniqueID
   :author lib-schema/Author
   :created-at lib-schema/ISO8601
@@ -58,11 +57,9 @@
 
   ([entry interaction-props user]
   (if-let* [entry-uuid (:uuid entry)
-            topic-slug (:topic-slug entry)
             board-uuid (:board-uuid entry)
             org-uuid (:org-uuid entry)
             entry-props {:entry-uuid entry-uuid
-                         :topic-slug topic-slug
                          :board-uuid board-uuid
                          :org-uuid org-uuid}]
     (->interaction (merge entry-props interaction-props) user))))
