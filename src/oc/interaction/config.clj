@@ -55,3 +55,7 @@
 ;; ----- JWT -----
 
 (defonce passphrase (env :open-company-auth-passphrase))
+
+;; ----- Slack -----
+
+(defonce slack-verification-token (env :open-company-slack-verification-token))
