@@ -44,7 +44,7 @@
 
   ([event interaction reaction-count]
   (timbre/info "Sending:" event "to the watcher for:" (:uuid interaction))
-  (let [initial-payload {:entry-uuid (:entry-uuid interaction)
+  (let [initial-payload {:resource-uuid (:resource-uuid interaction)
                          :interaction (interact-rep/interaction-representation interaction :none)}
         payload (if reaction-count (assoc initial-payload :count reaction-count) initial-payload)]
     (>!! watcher-chan {:send true

@@ -30,41 +30,41 @@
 ;; ----- Actions -----
 
 (defn- echo-comment
-  "Given a decoded JWToken and a comment, mirror it to Slack as the user."
-  [user entry interaction]
+  "Given a decoded JWToken (user), a resource, and a comment (interaction), mirror the comment to Slack as the user."
+  [user resource interaction]
   (>!! mirror/echo-chan {:slack-bot (slack-bot user)
                          :slack-user (slack-user user)
                          :comment interaction
-                         :entry entry
-                         :slack-channel (assoc slack-mirror :thread (-> entry :slack-thread :thread))}))
+                         :resource resource
+                         :slack-channel (assoc slack-mirror :thread (-> resource :slack-thread :thread))}))
 
 (defn- proxy-comment
-  "Given a decoded JWToken and a comment, mirror it to Slack on behalf of the user."
-  [user entry interaction]
+  "Given a decoded JWToken (user), a resource, and a comment (interaction), mirror it to Slack on behalf of the user."
+  [user resource interaction]
   (>!! mirror/proxy-chan {:slack-bot (slack-bot user)
                           :comment interaction
-                          :entry entry
-                          :slack-channel (assoc slack-mirror :thread (-> entry :slack-thread :thread))
+                          :resource resource
+                          :slack-channel (assoc slack-mirror :thread (-> resource :slack-thread :thread))
                           :author user}))
 
 (defun- notify-mirror
-  "Given a decoded JWToken and a comment, mirror it to Slack if we can."
+  "Given a decoded JWToken (user), a resource, and a comment (interaction), mirror it to Slack if we can."
   
   ;; no mirror Slack channel
   ;; TODO this case once we have config of Slack mirror
 
   ;; we can mirror it to Slack as the user
-  ([user :guard slack-user entry interaction]
-  (timbre/info "Using Slack user to mirror comment:" (:uuid interaction) "of entry:" (:uuid entry))
-  (echo-comment user entry interaction))
+  ([user :guard slack-user resource interaction]
+  (timbre/info "Using Slack user to mirror comment:" (:uuid interaction) "of resource:" (:uuid resource))
+  (echo-comment user resource interaction))
 
   ;; we can mirror it to Slack by proxy with the bot
-  ([user :guard slack-bot entry interaction]
-  (timbre/info "Using Slack bot to mirror comment:" (:uuid interaction)  "of entry:" (:uuid entry))
-  (proxy-comment user entry interaction))
+  ([user :guard slack-bot resource interaction]
+  (timbre/info "Using Slack bot to mirror comment:" (:uuid interaction)  "of resource:" (:uuid resource))
+  (proxy-comment user resource interaction))
 
   ;; no slack user or bot
-  ([_user _entry interaction] (timbre/debug "Skipping Slack mirroring of comment:" (:uuid interaction))))
+  ([_user _resource interaction] (timbre/debug "Skipping Slack mirroring of comment:" (:uuid interaction))))
 
 (defn create-interaction 
   "Create an interaction in the DB and publish it to the watcher (WebSockets) and Slack mirror."
@@ -88,7 +88,7 @@
                               interact-result
                               reaction-count)
       ;; Send the a comment to the mirror for mirroring to Slack
-      (when comment? (notify-mirror (:user ctx) (:existing-entry ctx) interact-result))
+      (when comment? (notify-mirror (:user ctx) (:existing-resource ctx) interact-result))
       ;; Return the new interaction for the request context
       {:created-interaction interact-result})
     
@@ -96,9 +96,10 @@
 
 ;; ----- Validations -----
 
-(defn entry-exists? [conn org-uuid board-uuid entry-uuid]
+(defn resource-exists? [conn org-uuid board-uuid resource-uuid]
   (when-let* [org (first (db-common/read-resources conn "orgs" "uuid" org-uuid))
               board (db-common/read-resource conn "boards" board-uuid)
               board-org? (= (:org-uuid board) org-uuid)
-              entry (db-common/read-resource conn "entries" entry-uuid)]
-    (merge entry {:org-slug (:slug org) :board-slug (:slug board)})))
+              resource (or (db-common/read-resource conn "entries" resource-uuid)
+                           (db-common/read-resource conn "stories" resource-uuid))]
+    (merge resource {:org-slug (:slug org) :board-slug (:slug board)})))

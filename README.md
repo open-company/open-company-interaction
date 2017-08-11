@@ -121,19 +121,19 @@ Then enter these commands one-by-one, noting the output:
 (interaction/create-comment! conn
   (interaction/->comment {:org-uuid "abcd-1234-abcd"
                           :board-uuid "1234-abcd-1234"
-                          :entry-uuid "abcd-5678-abcd"
+                          :resource-uuid "abcd-5678-abcd"
                           :body "That all looks great to me!"} author))
 
 (interaction/create-reaction! conn
   (interaction/->reaction {:org-uuid "abcd-1234-abcd"
                            :board-uuid "1234-abcd-1234"
-                           :entry-uuid "abcd-5678-abcd"
+                           :resource-uuid "abcd-5678-abcd"
                            :reaction "😀"} author))
 
 (interaction/create-comment-reaction! conn
   (interaction/->comment-reaction {:org-uuid "abcd-1234-abcd"
                                    :board-uuid "1234-abcd-1234"
-                                   :entry-uuid "abcd-5678-abcd"
+                                   :resource-uuid "abcd-5678-abcd"
                                    :interaction-uuid "5678-abcd-5678"
                                    :reaction "👌"} author))
 ```

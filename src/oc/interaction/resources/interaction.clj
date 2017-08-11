@@ -1,5 +1,5 @@
 (ns oc.interaction.resources.interaction
-  "Interaction (comment, entry reaction, comment reaction) stored in RethinkDB."
+  "Interaction (comment, reaction, comment reaction) stored in RethinkDB."
   (:require [clojure.walk :refer (keywordize-keys)]
             [if-let.core :refer (if-let*)]
             [oc.lib.db.common :as db-common]
@@ -21,7 +21,7 @@
   :uuid lib-schema/UniqueID
   :org-uuid lib-schema/UniqueID
   :board-uuid lib-schema/UniqueID
-  :entry-uuid lib-schema/UniqueID
+  :resource-uuid lib-schema/UniqueID
   :author lib-schema/Author
   :created-at lib-schema/ISO8601
   :updated-at lib-schema/ISO8601})
@@ -55,28 +55,28 @@
         (assoc :created-at ts)
         (assoc :updated-at ts))))
 
-  ([entry interaction-props user]
-  (if-let* [entry-uuid (:uuid entry)
-            board-uuid (:board-uuid entry)
-            org-uuid (:org-uuid entry)
-            entry-props {:entry-uuid entry-uuid
-                         :board-uuid board-uuid
-                         :org-uuid org-uuid}]
-    (->interaction (merge entry-props interaction-props) user))))
+  ([resource interaction-props user]
+  (if-let* [resource-uuid (:uuid resource)
+            board-uuid (:board-uuid resource)
+            org-uuid (:org-uuid resource)
+            resource-props {:resource-uuid resource-uuid
+                            :board-uuid board-uuid
+                            :org-uuid org-uuid}]
+    (->interaction (merge resource-props interaction-props) user))))
 
 (schema/defn ^:always-validate ->comment :- Comment
   "
-  Take an optional entry, a minimal map describing a comment, and a user then 'fill the blanks' with
+  Take an optional resource, a minimal map describing a comment, and a user then 'fill the blanks' with
   any missing properties and return the Comment map.
   "
   ([comment-props user :- lib-schema/User]
   {:pre [(map? comment-props)]}
   (->interaction comment-props user))
 
-  ([entry comment-props user :- lib-schema/User]
-  {:pre [(map? entry)
+  ([resource comment-props user :- lib-schema/User]
+  {:pre [(map? resource)
          (map? comment-props)]}
-  (->interaction entry comment-props user)))
+  (->interaction resource comment-props user)))
 
 (schema/defn ^:always-validate ->reaction :- Reaction
   "
@@ -148,27 +148,27 @@
 
 ;; ----- Collection of interactions -----
 
-(schema/defn ^:always-validate get-interactions-by-entry
-  "Given the UUID of the entry, return the interactions (sorted by :created-at)."
-  [conn entry-uuid :- lib-schema/UniqueID]
+(schema/defn ^:always-validate get-interactions-by-resource
+  "Given the UUID of the resource, return the interactions (sorted by :created-at)."
+  [conn resource-uuid :- lib-schema/UniqueID]
   {:pre [(db-common/conn? conn)]}
-  (sort-by :created-at (db-common/read-resources conn table-name :entry-uuid entry-uuid)))
+  (sort-by :created-at (db-common/read-resources conn table-name :resource-uuid resource-uuid)))
 
-(schema/defn ^:always-validate get-comments-by-entry
-  "Given the UUID of the entry, return the comments (sorted by :created-at)."
-  [conn entry-uuid :- lib-schema/UniqueID]
-  (filter :body (get-interactions-by-entry conn entry-uuid)))
+(schema/defn ^:always-validate get-comments-by-resource
+  "Given the UUID of the resource, return the comments (sorted by :created-at)."
+  [conn resource-uuid :- lib-schema/UniqueID]
+  (filter :body (get-interactions-by-resource conn resource-uuid)))
 
-(schema/defn ^:always-validate get-reactions-by-entry
+(schema/defn ^:always-validate get-reactions-by-resource
   "
-  Given the UUID of the entry, and optionally a specific reaction unicode character,
+  Given the UUID of the resource, and optionally a specific reaction unicode character,
   return the reactions (sorted by :created-at).
   "
-  ([conn entry-uuid :- lib-schema/UniqueID]
-  (filter :reaction (get-interactions-by-entry conn entry-uuid)))
+  ([conn resource-uuid :- lib-schema/UniqueID]
+  (filter :reaction (get-interactions-by-resource conn resource-uuid)))
   
-  ([conn entry-uuid :- lib-schema/UniqueID reaction-unicode :- lib-schema/NonBlankStr]
-  (filter #(= reaction-unicode (:reaction %)) (get-interactions-by-entry conn entry-uuid))))
+  ([conn resource-uuid :- lib-schema/UniqueID reaction-unicode :- lib-schema/NonBlankStr]
+  (filter #(= reaction-unicode (:reaction %)) (get-interactions-by-resource conn resource-uuid))))
 
 ;; ----- Armageddon -----
 
