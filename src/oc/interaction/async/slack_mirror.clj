@@ -95,7 +95,7 @@
   Given the text of a comment to go to Slack and the comment, make Slack message text that includes an explanation and
   link to the resource before the message text.
 
-  Update link: /<org-slug>/<board-slug>/<resource-uuid>
+  Link: /<org-slug>/<board-slug>/<resource-uuid>
   "
   [intro text resource interaction]
   (if-let* [org-slug (:org-slug resource)
@@ -122,11 +122,9 @@
   (when-not (:thread slack-channel) ; nothing to do if comment already has a Slack thread
     (pool/with-pool [conn db-pool]
       (if-let* [slack-thread (assoc slack-channel :thread (:ts result))
-                original-entry (db-common/read-resource conn entry-table-name (:resource-uuid interaction))
-                original-story (when-not original-entry
-                                  (db-common/read-resource conn story-table-name (:resource-uuid interaction)))
-                table-name (if original-entry entry-table-name story-table-name)
-                original-resource (or original-entry original-story)]
+                original-resource (or (db-common/read-resource conn entry-table-name (:resource-uuid interaction))
+                                      (db-common/read-resource conn story-table-name (:resource-uuid interaction)))
+                table-name (if (:status original-resource) story-table-name entry-table-name)]
         (do
           (timbre/info "Persisting slack thread:" slack-thread "to resource:" (:resource-uuid interaction))
           (db-common/update-resource conn table-name :uuid original-resource

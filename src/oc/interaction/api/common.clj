@@ -1,7 +1,6 @@
 (ns oc.interaction.api.common
   "Liberator API for comment resources."
   (:require [clojure.core.async :refer (>!!)]
-            [defun.core :refer (defun-)]
             [if-let.core :refer (if-let* when-let*)]
             [taoensso.timbre :as timbre]
             [oc.lib.db.common :as db-common]
@@ -9,21 +8,22 @@
             [oc.interaction.async.watcher :as watcher]
             [oc.interaction.async.slack-mirror :as mirror]))
 
-;; TODO hard coding of Slack mirror, replace once we have config of Slack mirror
-(def slack-mirror {:slack-org-id "T06SBMH60" :channel-name "bot-testing" :channel-id "C10A1P4H2"})
+;; ----- DB Persistence -----
+
+(def board-table-name "boards")
 
 ;; ----- Utility Functions -----
 
 (defn- slack-user
   "Do we have a user ID and token for the mirroring Slack org?"
-  [user]
-  (let [slack-org-id (keyword (:slack-org-id slack-mirror))]
+  [user channel]
+  (let [slack-org-id (keyword (:slack-org-id channel))]
     (-> user :slack-users slack-org-id)))
 
 (defn- slack-bot
   "Do we have a Slack bot for the mirroring Slack org?"
-  [user]
-  (let [slack-org-id (:slack-org-id slack-mirror)
+  [user channel]
+  (let [slack-org-id (:slack-org-id channel)
         slack-bots (-> user :slack-bots vals concat flatten)]
     (some #(if (= (:slack-org-id %) slack-org-id) % false) slack-bots)))
 
@@ -31,40 +31,48 @@
 
 (defn- echo-comment
   "Given a decoded JWToken (user), a resource, and a comment (interaction), mirror the comment to Slack as the user."
-  [user resource interaction]
-  (>!! mirror/echo-chan {:slack-bot (slack-bot user)
-                         :slack-user (slack-user user)
+  [user resource channel interaction]
+  (>!! mirror/echo-chan {:slack-bot (slack-bot user channel)
+                         :slack-user (slack-user user channel)
                          :comment interaction
                          :resource resource
-                         :slack-channel (assoc slack-mirror :thread (-> resource :slack-thread :thread))}))
+                         :slack-channel (assoc channel :thread (-> resource :slack-thread :thread))}))
 
 (defn- proxy-comment
   "Given a decoded JWToken (user), a resource, and a comment (interaction), mirror it to Slack on behalf of the user."
-  [user resource interaction]
-  (>!! mirror/proxy-chan {:slack-bot (slack-bot user)
+  [user resource channel interaction]
+  (>!! mirror/proxy-chan {:slack-bot (slack-bot user channel)
                           :comment interaction
                           :resource resource
-                          :slack-channel (assoc slack-mirror :thread (-> resource :slack-thread :thread))
+                          :slack-channel (assoc channel :thread (-> resource :slack-thread :thread))
                           :author user}))
 
-(defun- notify-mirror
+(defn- notify-mirror
   "Given a decoded JWToken (user), a resource, and a comment (interaction), mirror it to Slack if we can."
   
-  ;; no mirror Slack channel
-  ;; TODO this case once we have config of Slack mirror
+  ;; Get the Slack channel for the resource (if there is one)
+  ([conn user resource interaction]
+    (if-let* [board (db-common/read-resource conn board-table-name (:board-uuid resource))
+              channel (:slack-mirror board)]
+      (notify-mirror conn user resource channel interaction)
+      (timbre/debug "Skipping Slack mirroring of comment (no Slack mirror):" (:uuid interaction))))
 
-  ;; we can mirror it to Slack as the user
-  ([user :guard slack-user resource interaction]
-  (timbre/info "Using Slack user to mirror comment:" (:uuid interaction) "of resource:" (:uuid resource))
-  (echo-comment user resource interaction))
+  ([conn user resource channel interaction]
+  (cond
+    ;; we can mirror it to Slack as the user
+    (slack-user user channel)
+    (do (timbre/info "Using Slack user to mirror comment:" (:uuid interaction) "of resource:" (:uuid resource))
+        (echo-comment user resource channel interaction))
 
-  ;; we can mirror it to Slack by proxy with the bot
-  ([user :guard slack-bot resource interaction]
-  (timbre/info "Using Slack bot to mirror comment:" (:uuid interaction)  "of resource:" (:uuid resource))
-  (proxy-comment user resource interaction))
+    ;; we can mirror it to Slack by proxy with the bot
+    (slack-bot user channel)
+    (do
+      (timbre/info "Using Slack bot to mirror comment:" (:uuid interaction)  "of resource:" (:uuid resource))
+      (proxy-comment user resource channel interaction))
 
-  ;; no slack user or bot
-  ([_user _resource interaction] (timbre/debug "Skipping Slack mirroring of comment:" (:uuid interaction))))
+    ;; no slack user or bot
+    :else
+    (timbre/debug "Skipping Slack mirroring of comment (no user or bot):" (:uuid interaction)))))
 
 (defn create-interaction 
   "Create an interaction in the DB and publish it to the watcher (WebSockets) and Slack mirror."
@@ -88,7 +96,7 @@
                               interact-result
                               reaction-count)
       ;; Send the a comment to the mirror for mirroring to Slack
-      (when comment? (notify-mirror (:user ctx) (:existing-resource ctx) interact-result))
+      (when comment? (notify-mirror conn (:user ctx) (:existing-resource ctx) interact-result))
       ;; Return the new interaction for the request context
       {:created-interaction interact-result})
     
