@@ -126,13 +126,13 @@
 ;; ----- Component start/stop -----
 
 (defn start
-  "Start the incoming WebSocket frame router and the cor.async loop for sending outgoing WebSocket frames."
+  "Start the incoming WebSocket frame router and the core.async loop for sending outgoing WebSocket frames."
   []
   (start-router!)
   (sender-loop))
 
 (defn stop
-  "Stop the incoming WebSocket frame router and the cor.async loop for sending outgoing WebSocket frames."
+  "Stop the incoming WebSocket frame router and the core.async loop for sending outgoing WebSocket frames."
   []
   (timbre/info "Stopping incoming websocket router...")
   (stop-router!)
