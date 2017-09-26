@@ -42,6 +42,7 @@ Most of the dependencies are internal, meaning [Leiningen](https://github.com/te
 
 * [Java 8](http://www.oracle.com/technetwork/java/javase/downloads/index.html) - a Java 8 JRE is needed to run Clojure
 * [Leiningen](https://github.com/technomancy/leiningen) 2.5.1+ - Clojure's build and dependency management tool
+* [RethinkDB](http://rethinkdb.com/) v2.3.5+ - a multi-modal (document, key/value, relational) open source NoSQL database
 * [ngrok](https://ngrok.com/) - Secure web tunnel to localhost
 
 #### Java
@@ -70,6 +71,102 @@ git clone https://github.com/open-company/open-company-interaction.git
 cd open-company-interaction
 lein deps
 ```
+
+#### RethinkDB
+
+RethinkDB is easy to install with official and community supported packages for most operating systems.
+
+##### RethinkDB for Mac OS X via Brew
+
+Assuming you are running Mac OS X and are a [Homebrew](http://mxcl.github.com/homebrew/) user, use brew to install RethinkDB:
+
+```console
+brew update && brew install rethinkdb
+```
+
+If you already have RethinkDB installed via brew, check the version:
+
+```console
+rethinkdb -v
+```
+
+If it's older, then upgrade it with:
+
+```console
+brew update && brew upgrade rethinkdb && brew services restart rethinkdb
+```
+
+
+Follow the instructions provided by brew to run RethinkDB every time at login:
+
+```console
+ln -sfv /usr/local/opt/rethinkdb/*.plist ~/Library/LaunchAgents
+```
+
+And to run RethinkDB now:
+
+```console
+launchctl load ~/Library/LaunchAgents/homebrew.mxcl.rethinkdb.plist
+```
+
+Verify you can access the RethinkDB admin console:
+
+```console
+open http://localhost:8080/
+```
+
+After installing with brew:
+
+* Your RethinkDB binary will be at `/usr/local/bin/rethinkdb`
+* Your RethinkDB data directory will be at `/usr/local/var/rethinkdb`
+* Your RethinkDB log will be at `/usr/local/var/log/rethinkdb/rethinkdb.log`
+* Your RethinkDB launchd file will be at `~/Library/LaunchAgents/homebrew.mxcl.rethinkdb.plist`
+
+##### RethinkDB for Mac OS X (Binary Package)
+
+If you don't use brew, there is a binary installer package available for Mac OS X from the [Mac download page](http://rethinkdb.com/docs/install/osx/).
+
+After downloading the disk image, mounting it (double click) and running the rethinkdb.pkg installer, you need to manually create the data directory:
+
+```console
+sudo mkdir -p /Library/RethinkDB
+sudo chown <your-own-user-id> /Library/RethinkDB
+mkdir /Library/RethinkDB/data
+```
+
+And you will need to manually create the launchd config file to run RethinkDB every time at login. From within this repo run:
+
+```console
+cp ./opt/com.rethinkdb.server.plist ~/Library/LaunchAgents/com.rethinkdb.server.plist
+```
+
+And to run RethinkDB now:
+
+```console
+launchctl load ~/Library/LaunchAgents/com.rethinkdb.server.plist
+```
+
+Verify you can access the RethinkDB admin console:
+
+```console
+open http://localhost:8080/
+```
+
+After installing with the binary package:
+
+* Your RethinkDB binary will be at `/usr/local/bin/rethinkdb`
+* Your RethinkDB data directory will be at `/Library/RethinkDB/data`
+* Your RethinkDB log will be at `/var/log/rethinkdb.log`
+* Your RethinkDB launchd file will be at `~/Library/LaunchAgents/com.rethinkdb.server.plist`
+
+
+##### RethinkDB for Linux
+
+If you run Linux on your development environment (good for you, hardcore!) you can get a package for you distribution or compile from source. Details are on the [installation page](http://rethinkdb.com/docs/install/).
+
+##### RethinkDB for Windows
+
+RethinkDB [isn't supported on Windows](https://github.com/rethinkdb/rethinkdb/issues/1100) directly. If you are stuck on Windows, you can run Linux in a virtualized environment to host RethinkDB.
 
 #### ngrok
 
