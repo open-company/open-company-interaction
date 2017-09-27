@@ -11,7 +11,7 @@
   "
   Handle a message event from Slack. Ignore events that aren't threaded, or that are from us.
 
-  Idea here is to do very minimal processing and get a 200 back to Slack as fast as possible as this is a 'firehose'
+  Idea here is to do very minimal processing and get a 200 back to Slack as fast as possible as this is a 'fire hose'
   of requests. So minimal logging and minimal handling of the request.
 
   Message events look like:

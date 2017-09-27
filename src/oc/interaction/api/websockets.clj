@@ -52,18 +52,23 @@
 (defmethod -event-msg-handler
   ;; Default/fallback case (no other matching handler)
   :default
+  
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (timbre/trace "[websocket] unhandled event " event "for" id)
   (when ?reply-fn
     (?reply-fn {:umatched-event-as-echoed-from-from-server event})))
 
-(defmethod -event-msg-handler :chsk/handshake
+(defmethod -event-msg-handler
+  :chsk/handshake
+  
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (timbre/trace "[websocket] chsk/handshake" event id ?data)
   (when ?reply-fn
     (?reply-fn {:umatched-event-as-echoed-from-from-server event})))
 
-(defmethod -event-msg-handler :auth/jwt
+(defmethod -event-msg-handler
+  :auth/jwt
+  
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [board-uuid (-> ring-req :params :board-uuid)
         client-id (-> ring-req :params :client-id)
@@ -78,6 +83,7 @@
 (defmethod -event-msg-handler
   ;; Client disconnected
   :chsk/uidport-close
+  
   [{:as ev-msg :keys [event id ring-req]}]
   (let [board-uuid (-> ring-req :params :board-uuid)
         client-id (-> ring-req :params :client-id)]

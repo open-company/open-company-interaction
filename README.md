@@ -12,7 +12,7 @@
 
 > -- [Auliq Ice](https://www.linkedin.com/in/auliqice/)
 
-Companies struggle to keep everyone on the same page. People are hyper-connected in the moment but still don’t know what’s happening across the company. Employees and investors, co-founders and execs, customers and community, they all want more transparency. The solution is surprisingly simple and effective - great company updates that build transparency and alignment.
+Companies struggle to keep everyone on the same page. People are hyper-connected in the moment but still don't know what's happening across the company. Employees and investors, co-founders and execs, customers and community, they all want more transparency. The solution is surprisingly simple and effective - great company updates that build transparency and alignment.
 
 With that in mind we designed the [Carrot](https://carrot.io/) software-as-a-service application, powered by the open source [OpenCompany platform](https://github.com/open-company). The product design is based on three principles:
 
@@ -178,7 +178,7 @@ ngrok is trivial to setup:
 
 1. [Download](https://ngrok.com/download) the version for your operating system.
 1. Unzip the download and put ngrok someplace handy for you (in your path is good!)
-1. Verify you can run ngrok with: `ngrox help`
+1. Verify you can run ngrok with: `ngrok help`
 
 
 ## Usage
@@ -239,7 +239,7 @@ A Slack webhook is used to mirror Slack replies to OpenCompany comments back int
 
 To use the webhook from Slack with local development, you need to run ngrok, then configure your Slack integration.
 
-First start the Interaction Service (see above), and start the ngrox tunnel:
+First start the Interaction Service (see above), and start the ngrok tunnel:
 
 ```console
 ngrok http 3002
@@ -266,7 +266,7 @@ to echo events to your local environment via ngrok.
 
 ## Technical Design
 
-The interaction service is composed of 4 main responsibilites:
+The interaction service is composed of 4 main responsibilities:
 
 - CRUD of comments and reactions
 - WebSocket notifications of comment and reaction CRUD to listening clients

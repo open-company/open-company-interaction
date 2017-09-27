@@ -38,7 +38,7 @@
 ;; ----- Actions -----
 
 (defn notify-watcher
-  "Given an event, an interaction and an optional reeaction count, notify the watcher with core.async."
+  "Given an event, an interaction and an optional reaction count, notify the watcher with core.async."
   
   ([event interaction] (notify-watcher event interaction false))
 
