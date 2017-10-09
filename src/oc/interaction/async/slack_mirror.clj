@@ -6,7 +6,7 @@
   mirror a comment to Slack. A message is sent to `incoming-chan` to persist a message from Slack as
   a comment.
 
-  Comments are echoed to a Slack thread (defined by a Slack timestamp), the first comment for an entry
+  Comments are echoed to a Slack thread (defined by a Slack timestamp), the first comment for an resource
   initiates the Slack thread.
   "
   (:require [clojure.core.async :as async :refer [<!! >!!]]
@@ -93,18 +93,18 @@
 (defn- initial-message
   "
   Given the text of a comment to go to Slack and the comment, make Slack message text that includes an explanation and
-  link to the entry before the message text.
+  link to the resource before the message text.
 
-  Update link: /<org-slug>/<board-slug>/<entry-uuid>
+  Link: /<org-slug>/<board-slug>/<resource-uuid>
   "
-  [intro text entry interaction]
-  (if-let* [org-slug (:org-slug entry)
-            board-slug (:board-slug entry)
-            entry-uuid (:uuid entry)
-            headline (:headline entry)
-            entry-url (s/join "/" [c/ui-server-url org-slug board-slug "update" entry-uuid])]
+  [intro text resource interaction]
+  (if-let* [org-slug (:org-slug resource)
+            board-slug (:board-slug resource)
+            resource-uuid (:uuid resource)
+            description (or (:headline resource) (:title resource))
+            resource-url (s/join "/" [c/ui-server-url org-slug board-slug "update" resource-uuid])]
 
-    (str intro " <" entry-url "|" headline ">\n> " text)
+    (str intro " <" resource-url "|" description ">\n> " text)
     
     ;; Not expected to be here, but let's not completely crap the bed
     (do 
@@ -114,6 +114,7 @@
 ;; ----- DB Persistence -----
 
 (def entry-table-name "entries")
+(def story-table-name "stories")
 
 (defn- handle-mirror-result
   "Store Slack thread (ts) in interaction for future replies."
@@ -121,36 +122,40 @@
   (when-not (:thread slack-channel) ; nothing to do if comment already has a Slack thread
     (pool/with-pool [conn db-pool]
       (if-let* [slack-thread (assoc slack-channel :thread (:ts result))
-                original-entry (db-common/read-resource conn entry-table-name (:entry-uuid interaction))]
+                original-resource (or (db-common/read-resource conn entry-table-name (:resource-uuid interaction))
+                                      (db-common/read-resource conn story-table-name (:resource-uuid interaction)))
+                table-name (if (:status original-resource) story-table-name entry-table-name)]
         (do
-          (timbre/info "Persisting slack thread:" slack-thread "to entry:" (:entry-uuid interaction))
-          (db-common/update-resource conn entry-table-name :uuid original-entry
-                                     (merge original-entry {:slack-thread slack-thread}) (:updated-at original-entry)))
+          (timbre/info "Persisting slack thread:" slack-thread "to resource:" (:resource-uuid interaction))
+          (db-common/update-resource conn table-name :uuid original-resource
+              (merge original-resource {:slack-thread slack-thread}) (:updated-at original-resource)))
 
-        (timbre/error "Unable to persist slack thread:" result "to entry for entry:" (:entry-uuid interaction))))))
+        (timbre/error "Unable to persist slack thread:" result "to resource:" (:resource-uuid interaction))))))
 
 (defn- handle-message
   "
-  Look for an entry for the specified channel-id and thread. If one exists, create a new comment for
+  Look for an resource for the specified channel-id and thread. If one exists, create a new comment for
   the Slack message.
   "
   [db-pool channel-id thread body]
   (timbre/debug "Checking for slack thread:" thread "on channel:" channel-id)
   (pool/with-pool [conn db-pool]
-    (when-let [entry (first (db-common/read-resources conn entry-table-name
-                            "slack-thread-channel-id-thread" [[channel-id thread]]))]
-      (timbre/debug "Found entry:" (:uuid entry) "for slack thread:" thread "on channel:" channel-id)
+    (when-let [resource (or (first (db-common/read-resources conn entry-table-name
+                              "slack-thread-channel-id-thread" [[channel-id thread]]))
+                            (first (db-common/read-resources conn story-table-name
+                              "slack-thread-channel-id-thread" [[channel-id thread]])))]
+      (timbre/debug "Found resource:" (:uuid resource) "for slack thread:" thread "on channel:" channel-id)
       ;; request to lookup the comment's author
-      (>!! lookup-chan {:entry entry :message body}))))
+      (>!! lookup-chan {:resource resource :message body}))))
 
 (defn- persist-message-as-comment
   "Persist a new comment as a mirror of the incoming Slack message."
-  [db-pool entry message author]
+  [db-pool resource message author]
   ;; Create the comment
-  (timbre/info "Creating a new comment for entry:" (:uuid entry))
+  (timbre/info "Creating a new comment for resource:" (:uuid resource))
   (pool/with-pool [conn db-pool]
-    (if-let [result (interact-res/create-comment! conn (interact-res/->comment entry {:body (-> message :event :text)}
-                      author))]
+    (if-let [result (interact-res/create-comment! conn (interact-res/->comment resource 
+                        {:body (-> message :event :text)} author))]
       (watcher/notify-watcher :interaction-comment/add result))))
   
 ;; ----- Event loops (outgoing to Slack) -----
@@ -172,7 +177,7 @@
                   slack-user (:slack-user message)
                   token (:token slack-user)
                   interaction (:comment message)
-                  entry (:entry message)
+                  resource (:resource message)
                   uuid (:uuid interaction)
                   channel (:slack-channel message)
                   slack-channel (if bot-token (assoc channel :bot-token bot-token) channel)
@@ -184,7 +189,7 @@
                 (timbre/info "Echoing comment to Slack:" uuid "as a new thread"))
               (let [result (if thread
                               (slack/echo-message token channel-id thread text)
-                              (slack/echo-message token channel-id (initial-message echo-intro text entry interaction)))]
+                              (slack/echo-message token channel-id (initial-message echo-intro text resource interaction)))]
                 (if (:ok result)
                   (do 
                     (timbre/info "Echoed to Slack:" uuid)
@@ -209,7 +214,7 @@
                   bot-token (:token slack-bot)
                   token (:token slack-bot)
                   interaction (:comment message)
-                  entry (:entry message)
+                  resource (:resource message)
                   uuid (:uuid interaction)
                   channel (:slack-channel message)
                   slack-channel (if bot-token (assoc channel :bot-token bot-token) channel)
@@ -222,7 +227,7 @@
                 (timbre/info "Proxying comment to Slack:" uuid "as a new thread"))
               (let [result (if thread
                               (slack/proxy-message token channel-id thread text)
-                              (slack/proxy-message token channel-id (initial-message proxy-intro text entry interaction)))]
+                              (slack/proxy-message token channel-id (initial-message proxy-intro text resource interaction)))]
                 (if (:ok result)
                   (do
                     (timbre/info "Proxied to Slack:" uuid)
@@ -265,7 +270,7 @@
         (do (reset! lookup-go false) (timbre/info "Slack lookup stopped."))
         (async/thread
           (try
-            (let [bot-token (-> message :entry :slack-thread :bot-token)
+            (let [bot-token (-> message :resource :slack-thread :bot-token)
                   slack-user-id (-> message :message :event :user)]
 
               (if (cache/has? @SlackUserCache slack-user-id) ; lookup comment's author in cache
@@ -295,7 +300,7 @@
         (do (reset! persist-go false) (timbre/info "Slack persist stopped."))
         (async/thread
           (try
-            (persist-message-as-comment db-pool (:entry message) (:message message) (:author message))
+            (persist-message-as-comment db-pool (:resource message) (:message message) (:author message))
             (catch Exception e
               (timbre/error e)))))))))
 

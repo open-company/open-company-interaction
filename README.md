@@ -12,7 +12,7 @@
 
 > -- [Auliq Ice](https://www.linkedin.com/in/auliqice/)
 
-Companies struggle to keep everyone on the same page. People are hyper-connected in the moment but still don’t know what’s happening across the company. Employees and investors, co-founders and execs, customers and community, they all want more transparency. The solution is surprisingly simple and effective - great company updates that build transparency and alignment.
+Companies struggle to keep everyone on the same page. People are hyper-connected in the moment but still don't know what's happening across the company. Employees and investors, co-founders and execs, customers and community, they all want more transparency. The solution is surprisingly simple and effective - great company updates that build transparency and alignment.
 
 With that in mind we designed the [Carrot](https://carrot.io/) software-as-a-service application, powered by the open source [OpenCompany platform](https://github.com/open-company). The product design is based on three principles:
 
@@ -42,6 +42,7 @@ Most of the dependencies are internal, meaning [Leiningen](https://github.com/te
 
 * [Java 8](http://www.oracle.com/technetwork/java/javase/downloads/index.html) - a Java 8 JRE is needed to run Clojure
 * [Leiningen](https://github.com/technomancy/leiningen) 2.5.1+ - Clojure's build and dependency management tool
+* [RethinkDB](http://rethinkdb.com/) v2.3.5+ - a multi-modal (document, key/value, relational) open source NoSQL database
 * [ngrok](https://ngrok.com/) - Secure web tunnel to localhost
 
 #### Java
@@ -71,6 +72,102 @@ cd open-company-interaction
 lein deps
 ```
 
+#### RethinkDB
+
+RethinkDB is easy to install with official and community supported packages for most operating systems.
+
+##### RethinkDB for Mac OS X via Brew
+
+Assuming you are running Mac OS X and are a [Homebrew](http://mxcl.github.com/homebrew/) user, use brew to install RethinkDB:
+
+```console
+brew update && brew install rethinkdb
+```
+
+If you already have RethinkDB installed via brew, check the version:
+
+```console
+rethinkdb -v
+```
+
+If it's older, then upgrade it with:
+
+```console
+brew update && brew upgrade rethinkdb && brew services restart rethinkdb
+```
+
+
+Follow the instructions provided by brew to run RethinkDB every time at login:
+
+```console
+ln -sfv /usr/local/opt/rethinkdb/*.plist ~/Library/LaunchAgents
+```
+
+And to run RethinkDB now:
+
+```console
+launchctl load ~/Library/LaunchAgents/homebrew.mxcl.rethinkdb.plist
+```
+
+Verify you can access the RethinkDB admin console:
+
+```console
+open http://localhost:8080/
+```
+
+After installing with brew:
+
+* Your RethinkDB binary will be at `/usr/local/bin/rethinkdb`
+* Your RethinkDB data directory will be at `/usr/local/var/rethinkdb`
+* Your RethinkDB log will be at `/usr/local/var/log/rethinkdb/rethinkdb.log`
+* Your RethinkDB launchd file will be at `~/Library/LaunchAgents/homebrew.mxcl.rethinkdb.plist`
+
+##### RethinkDB for Mac OS X (Binary Package)
+
+If you don't use brew, there is a binary installer package available for Mac OS X from the [Mac download page](http://rethinkdb.com/docs/install/osx/).
+
+After downloading the disk image, mounting it (double click) and running the rethinkdb.pkg installer, you need to manually create the data directory:
+
+```console
+sudo mkdir -p /Library/RethinkDB
+sudo chown <your-own-user-id> /Library/RethinkDB
+mkdir /Library/RethinkDB/data
+```
+
+And you will need to manually create the launchd config file to run RethinkDB every time at login. From within this repo run:
+
+```console
+cp ./opt/com.rethinkdb.server.plist ~/Library/LaunchAgents/com.rethinkdb.server.plist
+```
+
+And to run RethinkDB now:
+
+```console
+launchctl load ~/Library/LaunchAgents/com.rethinkdb.server.plist
+```
+
+Verify you can access the RethinkDB admin console:
+
+```console
+open http://localhost:8080/
+```
+
+After installing with the binary package:
+
+* Your RethinkDB binary will be at `/usr/local/bin/rethinkdb`
+* Your RethinkDB data directory will be at `/Library/RethinkDB/data`
+* Your RethinkDB log will be at `/var/log/rethinkdb.log`
+* Your RethinkDB launchd file will be at `~/Library/LaunchAgents/com.rethinkdb.server.plist`
+
+
+##### RethinkDB for Linux
+
+If you run Linux on your development environment (good for you, hardcore!) you can get a package for you distribution or compile from source. Details are on the [installation page](http://rethinkdb.com/docs/install/).
+
+##### RethinkDB for Windows
+
+RethinkDB [isn't supported on Windows](https://github.com/rethinkdb/rethinkdb/issues/1100) directly. If you are stuck on Windows, you can run Linux in a virtualized environment to host RethinkDB.
+
 #### ngrok
 
 ngrok allows you to setup a secure web tunnel for HTTP/S requests to your localhost. You'll need this
@@ -81,7 +178,7 @@ ngrok is trivial to setup:
 
 1. [Download](https://ngrok.com/download) the version for your operating system.
 1. Unzip the download and put ngrok someplace handy for you (in your path is good!)
-1. Verify you can run ngrok with: `ngrox help`
+1. Verify you can run ngrok with: `ngrok help`
 
 
 ## Usage
@@ -121,19 +218,19 @@ Then enter these commands one-by-one, noting the output:
 (interaction/create-comment! conn
   (interaction/->comment {:org-uuid "abcd-1234-abcd"
                           :board-uuid "1234-abcd-1234"
-                          :entry-uuid "abcd-5678-abcd"
+                          :resource-uuid "abcd-5678-abcd"
                           :body "That all looks great to me!"} author))
 
 (interaction/create-reaction! conn
   (interaction/->reaction {:org-uuid "abcd-1234-abcd"
                            :board-uuid "1234-abcd-1234"
-                           :entry-uuid "abcd-5678-abcd"
+                           :resource-uuid "abcd-5678-abcd"
                            :reaction "😀"} author))
 
 (interaction/create-comment-reaction! conn
   (interaction/->comment-reaction {:org-uuid "abcd-1234-abcd"
                                    :board-uuid "1234-abcd-1234"
-                                   :entry-uuid "abcd-5678-abcd"
+                                   :resource-uuid "abcd-5678-abcd"
                                    :interaction-uuid "5678-abcd-5678"
                                    :reaction "👌"} author))
 ```
@@ -142,7 +239,7 @@ A Slack webhook is used to mirror Slack replies to OpenCompany comments back int
 
 To use the webhook from Slack with local development, you need to run ngrok, then configure your Slack integration.
 
-First start the Interaction Service (see above), and start the ngrox tunnel:
+First start the Interaction Service (see above), and start the ngrok tunnel:
 
 ```console
 ngrok http 3002
@@ -169,7 +266,7 @@ to echo events to your local environment via ngrok.
 
 ## Technical Design
 
-The interaction service is composed of 4 main responsibilites:
+The interaction service is composed of 4 main responsibilities:
 
 - CRUD of comments and reactions
 - WebSocket notifications of comment and reaction CRUD to listening clients

@@ -13,7 +13,7 @@
   ([] (init c/interaction-server-port))
   ([port]
   (alter-var-root #'system (constantly (components/interaction-system {:handler-fn app/app
-                                                                   :port port})))))
+                                                                       :port port})))))
 
 (defn bind-conn! []
   (alter-var-root #'conn (constantly (pool/claim (get-in system [:db-pool :pool])))))

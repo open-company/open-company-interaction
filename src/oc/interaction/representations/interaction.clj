@@ -14,11 +14,11 @@
 
 (defun url 
 
-  ([org-uuid board-uuid entry-uuid]
-  (str "/orgs/" org-uuid "/boards/" board-uuid "/entries/" entry-uuid))
+  ([org-uuid board-uuid resource-uuid]
+  (str "/orgs/" org-uuid "/boards/" board-uuid "/resources/" resource-uuid))
   
-  ([org-uuid board-uuid entry-uuid reaction-unicode]
-  (str (url org-uuid board-uuid entry-uuid) "/reactions/" reaction-unicode "/on"))
+  ([org-uuid board-uuid resource-uuid reaction-unicode]
+  (str (url org-uuid board-uuid resource-uuid) "/reactions/" reaction-unicode "/on"))
   
   ([interaction :guard :interaction-uuid]
   (str (url (dissoc interaction :interaction-uuid))
@@ -26,7 +26,7 @@
        "/reactions/" (:uuid interaction)))
   
   ([interaction]
-  (str (url (:org-uuid interaction) (:board-uuid interaction) (:entry-uuid interaction))
+  (str (url (:org-uuid interaction) (:board-uuid interaction) (:resource-uuid interaction))
     "/comments/" (:uuid interaction))))
 
 (defn- update-link [interaction] (hateoas/partial-update-link (url interaction) {:content-type comment-media-type
@@ -66,8 +66,8 @@
   Given the parts of an interaction URL, a sequence of interactions, and a user, render a list of the interactions
   for the REST API.
   "
-  [org-uuid board-uuid entry-uuid interactions user]
-  (let [collection-url (str (url org-uuid board-uuid entry-uuid) "/comments")
+  [org-uuid board-uuid resource-uuid interactions user]
+  (let [collection-url (str (url org-uuid board-uuid resource-uuid) "/comments")
         links [(hateoas/self-link collection-url {:accept comment-collection-media-type})]]
     (json/generate-string
       {:collection {:version hateoas/json-collection-version
@@ -82,8 +82,8 @@
   Given a unicode character, a list of reactions, and an indication if the user reacted or not, render a reaction
   for the REST API.
   "
-  [org-uuid board-uuid entry-uuid reaction-unicode reactions reacted?]
-  (let [reaction-url (url org-uuid board-uuid entry-uuid reaction-unicode)]
+  [org-uuid board-uuid resource-uuid reaction-unicode reactions reacted?]
+  (let [reaction-url (url org-uuid board-uuid resource-uuid reaction-unicode)]
     (json/generate-string {reaction-unicode {
         :reacted reacted?
         :count (count reactions)

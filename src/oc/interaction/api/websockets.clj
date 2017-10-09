@@ -52,18 +52,23 @@
 (defmethod -event-msg-handler
   ;; Default/fallback case (no other matching handler)
   :default
+  
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
-  (timbre/trace "[websocket] unhandled event " event "for" id)
+  (timbre/trace "[websocket] unhandled event" event "for" id)
   (when ?reply-fn
     (?reply-fn {:umatched-event-as-echoed-from-from-server event})))
 
-(defmethod -event-msg-handler :chsk/handshake
+(defmethod -event-msg-handler
+  :chsk/handshake
+  
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (timbre/trace "[websocket] chsk/handshake" event id ?data)
   (when ?reply-fn
     (?reply-fn {:umatched-event-as-echoed-from-from-server event})))
 
-(defmethod -event-msg-handler :auth/jwt
+(defmethod -event-msg-handler
+  :auth/jwt
+  
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [board-uuid (-> ring-req :params :board-uuid)
         client-id (-> ring-req :params :client-id)
@@ -78,10 +83,11 @@
 (defmethod -event-msg-handler
   ;; Client disconnected
   :chsk/uidport-close
+  
   [{:as ev-msg :keys [event id ring-req]}]
   (let [board-uuid (-> ring-req :params :board-uuid)
         client-id (-> ring-req :params :client-id)]
-    (timbre/info "[websocket] chsk/uidport-close for board" board-uuid "by" client-id)
+    (timbre/info "[websocket] chsk/uidport-close for board:" board-uuid "by" client-id)
     (>!! watcher/watcher-chan {:unwatch true :watch-id board-uuid :client-id client-id})))
 
 ;; ----- Sente router event loop (incoming from Sente/WebSocket) -----
@@ -101,6 +107,7 @@
 ;; ----- Sender event loop (outgoing to Sente/WebSocket) -----
 
 (defn sender-loop []
+  (reset! sender-go true)  
   (async/go (while @sender-go
     (timbre/debug "Sender waiting...")
     (let [message (<!! watcher/sender-chan)]
@@ -126,13 +133,13 @@
 ;; ----- Component start/stop -----
 
 (defn start
-  "Start the incoming WebSocket frame router and the cor.async loop for sending outgoing WebSocket frames."
+  "Start the incoming WebSocket frame router and the core.async loop for sending outgoing WebSocket frames."
   []
   (start-router!)
   (sender-loop))
 
 (defn stop
-  "Stop the incoming WebSocket frame router and the cor.async loop for sending outgoing WebSocket frames."
+  "Stop the incoming WebSocket frame router and the core.async loop for sending outgoing WebSocket frames."
   []
   (timbre/info "Stopping incoming websocket router...")
   (stop-router!)

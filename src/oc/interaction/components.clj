@@ -74,6 +74,8 @@
                 (map->HttpKit {:options {:port port}})
                 [:handler])))
 
+;; ----- REPL usage -----
+
 (comment
 
   ;; To use the Interaction Service from the REPL

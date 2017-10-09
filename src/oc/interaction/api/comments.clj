@@ -17,14 +17,14 @@
 
 (defn valid-new-comment?
   "Determine if the provided body constitutes a valid new comment."
-  [conn ctx org-uuid board-uuid entry-uuid]
+  [conn ctx org-uuid board-uuid resource-uuid]
   (try
     ;; Create the new interaction from the data provided
     (let [interact-map (:data ctx)
           interaction (merge interact-map {
                         :org-uuid org-uuid
                         :board-uuid board-uuid
-                        :entry-uuid entry-uuid})
+                        :resource-uuid resource-uuid})
           author (:user ctx)]
       {:new-interaction (interact-res/->comment interaction author)})
 
@@ -60,7 +60,7 @@
     (do 
       (timbre/info "Updated comment:" comment-uuid)
       (watcher/notify-watcher :interaction-comment/update updated-comment)
-      {:updated-entry updated-comment})
+      {:updated-comment updated-comment})
 
     (do (timbre/error "Failed updating comment:" comment-uuid) false)))
 
@@ -69,15 +69,15 @@
   (if-let* [existing-comment (:existing-comment ctx)
             _delete-result (interact-res/delete-interaction! conn comment-uuid)]
     (do 
-      (timbre/info "Deleted entry:" comment-uuid)
+      (timbre/info "Deleted comment:" comment-uuid)
       (watcher/notify-watcher :interaction-comment/delete existing-comment)
       true)
-    (do (timbre/info "Failed deleting entry:" comment-uuid) false)))
+    (do (timbre/info "Failed deleting comment:" comment-uuid) false)))
 
 ;; ----- Resources - see: http://clojure-liberator.github.io/liberator/assets/img/decision-graph.svg
 
 ;; A resource for operations on a specific comment
-(defresource comment-item [conn org-uuid board-uuid entry-uuid comment-uuid]
+(defresource comment-item [conn org-uuid board-uuid resource-uuid comment-uuid]
   (api-common/open-company-authenticated-resource config/passphrase) ; verify validity and presence of required JWToken
 
   :allowed-methods [:options :patch :delete]
@@ -102,14 +102,14 @@
     :delete true})
 
   ;; Existentialism
-  :exists? (fn [ctx] (if-let* [entry (or (:existing-entry ctx)
-                                         (common/entry-exists? conn org-uuid board-uuid entry-uuid))
+  :exists? (fn [ctx] (if-let* [resource (or (:existing-resource ctx)
+                                         (common/resource-exists? conn org-uuid board-uuid resource-uuid))
                                existing-comment (or (:existing-comment ctx)
                                                     (interact-res/get-interaction conn comment-uuid))
                                _matches? (and (= (:org-uuid existing-comment) org-uuid)
                                               (= (:board-uuid existing-comment) board-uuid)
-                                              (= (:entry-uuid existing-comment) entry-uuid))]
-                        {:existing-entry entry :existing-comment existing-comment :existing? true}
+                                              (= (:resource-uuid existing-comment) resource-uuid))]
+                        {:existing-resource resource :existing-comment existing-comment :existing? true}
                         false))
 
   ;; Actions
@@ -121,7 +121,7 @@
   :handle-no-content (fn [ctx] (when-not (:existing? ctx) (api-common/missing-response))))
 
 ;; A resource for operations on a list of comments
-(defresource comment-list [conn org-uuid board-uuid entry-uuid]
+(defresource comment-list [conn org-uuid board-uuid resource-uuid]
   (api-common/open-company-authenticated-resource config/passphrase) ; verify validity and presence of required JWToken
 
   :allowed-methods [:options :get :post]
@@ -148,19 +148,19 @@
   :processable? (by-method {
     :options true
     :get true
-    :post (fn [ctx] (valid-new-comment? conn ctx org-uuid board-uuid entry-uuid))})
+    :post (fn [ctx] (valid-new-comment? conn ctx org-uuid board-uuid resource-uuid))})
 
   ;; Existentialism
-  :exists? (fn [ctx] (if-let [entry (common/entry-exists? conn org-uuid board-uuid entry-uuid)]
-                        (let [comments (interact-res/get-comments-by-entry conn entry-uuid)]
-                          {:existing-entry entry :existing-comments comments})
+  :exists? (fn [ctx] (if-let [resource (common/resource-exists? conn org-uuid board-uuid resource-uuid)]
+                        (let [comments (interact-res/get-comments-by-resource conn resource-uuid)]
+                          {:existing-resource resource :existing-comments comments})
                         false))
 
   ;; Actions
   :post! (fn [ctx] (common/create-interaction conn ctx))
 
   ;; Responses
-  :handle-ok (fn [ctx] (interact-rep/render-interaction-list org-uuid board-uuid entry-uuid
+  :handle-ok (fn [ctx] (interact-rep/render-interaction-list org-uuid board-uuid resource-uuid
                           (:existing-comments ctx) (:user ctx)))
   :handle-created (fn [ctx] (let [new-interaction (:created-interaction ctx)]
                               (api-common/location-response
@@ -177,17 +177,17 @@
     (compojure/routes
 
       ;; Comment listing and creation
-      (ANY "/orgs/:org-uuid/boards/:board-uuid/entries/:entry-uuid/comments"
-        [org-uuid board-uuid entry-uuid]
-        (pool/with-pool [conn db-pool] (comment-list conn org-uuid board-uuid entry-uuid)))
-      (ANY "/orgs/:org-uuid/boards/:board-uuid/entries/:entry-uuid/comments/"
-        [org-uuid board-uuid entry-uuid]
-        (pool/with-pool [conn db-pool] (comment-list conn org-uuid board-uuid entry-uuid)))
+      (ANY "/orgs/:org-uuid/boards/:board-uuid/resources/:resource-uuid/comments"
+        [org-uuid board-uuid resource-uuid]
+        (pool/with-pool [conn db-pool] (comment-list conn org-uuid board-uuid resource-uuid)))
+      (ANY "/orgs/:org-uuid/boards/:board-uuid/resources/:resource-uuid/comments/"
+        [org-uuid board-uuid resource-uuid]
+        (pool/with-pool [conn db-pool] (comment-list conn org-uuid board-uuid resource-uuid)))
 
       ;; Comment editing and removal
-      (ANY "/orgs/:org-uuid/boards/:board-uuid/entries/:entry-uuid/comments/:comment-uuid"
-        [org-uuid board-uuid entry-uuid comment-uuid]
-        (pool/with-pool [conn db-pool] (comment-item conn org-uuid board-uuid entry-uuid comment-uuid)))
-      (ANY "/orgs/:org-uuid/boards/:board-uuid/entries/:entry-uuid/comments/:comment-uuid/"
-        [org-uuid board-uuid entry-uuid comment-uuid]
-        (pool/with-pool [conn db-pool] (comment-item conn org-uuid board-uuid entry-uuid comment-uuid))))))
+      (ANY "/orgs/:org-uuid/boards/:board-uuid/resources/:resource-uuid/comments/:comment-uuid"
+        [org-uuid board-uuid resource-uuid comment-uuid]
+        (pool/with-pool [conn db-pool] (comment-item conn org-uuid board-uuid resource-uuid comment-uuid)))
+      (ANY "/orgs/:org-uuid/boards/:board-uuid/resources/:resource-uuid/comments/:comment-uuid/"
+        [org-uuid board-uuid resource-uuid comment-uuid]
+        (pool/with-pool [conn db-pool] (comment-item conn org-uuid board-uuid resource-uuid comment-uuid))))))
