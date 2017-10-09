@@ -102,7 +102,7 @@
             board-slug (:board-slug resource)
             resource-uuid (:uuid resource)
             description (or (:headline resource) (:title resource))
-            resource-url (s/join "/" [c/ui-server-url org-slug board-slug resource-uuid])]
+            resource-url (s/join "/" [c/ui-server-url org-slug board-slug "update" resource-uuid])]
 
     (str intro " <" resource-url "|" description ">\n> " text)
     

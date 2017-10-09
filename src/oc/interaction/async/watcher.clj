@@ -1,6 +1,6 @@
 (ns oc.interaction.async.watcher
   "
-  Track which web socket connections are 'watching' which items.
+  Track which WebSocket connections are 'watching' which items.
 
   Use of this watcher is through core/async. A message is sent to the `watcher-chan` to
   register interest, unregister interest and send something to all that have registered interest.

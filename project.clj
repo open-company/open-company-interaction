@@ -13,18 +13,18 @@
 
   ;; All profile dependencies
   :dependencies [
-    [org.clojure/clojure "1.9.0-beta1"] ; Lisp on the JVM http://clojure.org/documentation
+    [org.clojure/clojure "1.9.0-beta2"] ; Lisp on the JVM http://clojure.org/documentation
     [org.clojure/core.cache "0.6.5"] ; Clojure in-memory caching https://github.com/clojure/core.cache
     [org.clojure/tools.cli "0.3.5"] ; Command-line parsing https://github.com/clojure/tools.cli
     [ring/ring-devel "1.6.2"] ; Web application library https://github.com/ring-clojure/ring
     [ring/ring-core "1.6.2"] ; Web application library https://github.com/ring-clojure/ring
     [ring/ring-json "0.5.0-beta1"] ; JSON request/response https://github.com/ring-clojure/ring-json
     [jumblerg/ring.middleware.cors "1.0.1"] ; CORS library https://github.com/jumblerg/ring.middleware.cors
-    [ring-logger-timbre "0.7.5" :exclusions [com.taoensso/encore]] ; Ring logging https://github.com/nberger/ring-logger-timbre
+    [ring-logger-timbre "0.7.6" :exclusions [com.taoensso/encore]] ; Ring logging https://github.com/nberger/ring-logger-timbre
     [compojure "1.6.0"] ; Web routing https://github.com/weavejester/compojure
     [clj-http "3.7.0"] ; HTTP client https://github.com/dakrone/clj-http
     
-    [open-company/lib "0.12.19"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    [open-company/lib "0.14.5"] ; Library for OC projects https://github.com/open-company/open-company-lib
     ; In addition to common functions, brings in the following common dependencies used by this project:
     ; httpkit - Web server http://http-kit.org/
     ; core.async - Async programming and communication https://github.com/clojure/core.async

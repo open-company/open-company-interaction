@@ -54,7 +54,7 @@
   :default
   
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
-  (timbre/trace "[websocket] unhandled event " event "for" id)
+  (timbre/trace "[websocket] unhandled event" event "for" id)
   (when ?reply-fn
     (?reply-fn {:umatched-event-as-echoed-from-from-server event})))
 
@@ -87,7 +87,7 @@
   [{:as ev-msg :keys [event id ring-req]}]
   (let [board-uuid (-> ring-req :params :board-uuid)
         client-id (-> ring-req :params :client-id)]
-    (timbre/info "[websocket] chsk/uidport-close for board" board-uuid "by" client-id)
+    (timbre/info "[websocket] chsk/uidport-close for board:" board-uuid "by" client-id)
     (>!! watcher/watcher-chan {:unwatch true :watch-id board-uuid :client-id client-id})))
 
 ;; ----- Sente router event loop (incoming from Sente/WebSocket) -----
@@ -107,6 +107,7 @@
 ;; ----- Sender event loop (outgoing to Sente/WebSocket) -----
 
 (defn sender-loop []
+  (reset! sender-go true)  
   (async/go (while @sender-go
     (timbre/debug "Sender waiting...")
     (let [message (<!! watcher/sender-chan)]
