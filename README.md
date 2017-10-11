@@ -289,7 +289,7 @@ To run the tests locally:
 
 ```console
 lein kibit
-lean eastwood
+lein eastwood
 ```
 
 
