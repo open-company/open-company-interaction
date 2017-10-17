@@ -24,7 +24,7 @@
     [compojure "1.6.0"] ; Web routing https://github.com/weavejester/compojure
     [clj-http "3.7.0"] ; HTTP client https://github.com/dakrone/clj-http
     
-    [open-company/lib "0.14.5"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    [open-company/lib "0.14.7"] ; Library for OC projects https://github.com/open-company/open-company-lib
     ; In addition to common functions, brings in the following common dependencies used by this project:
     ; httpkit - Web server http://http-kit.org/
     ; core.async - Async programming and communication https://github.com/clojure/core.async
@@ -67,7 +67,7 @@
       ]
       :plugins [
         [lein-midje "3.2.1"] ; Example-based testing https://github.com/marick/lein-midje
-        [jonase/eastwood "0.2.4"] ; Linter https://github.com/jonase/eastwood
+        [jonase/eastwood "0.2.5"] ; Linter https://github.com/jonase/eastwood
         [lein-kibit "0.1.6-beta2"] ; Static code search for non-idiomatic code https://github.com/jonase/kibit
       ]
     }
@@ -86,7 +86,7 @@
         :log-level "debug"
       }
       :plugins [
-        [lein-bikeshed "0.4.1"] ; Check for code smells https://github.com/dakrone/lein-bikeshed
+        [lein-bikeshed "0.5.0"] ; Check for code smells https://github.com/dakrone/lein-bikeshed
         [lein-checkall "0.1.1"] ; Runs bikeshed, kibit and eastwood https://github.com/itang/lein-checkall
         [lein-pprint "1.1.2"] ; pretty-print the lein project map https://github.com/technomancy/leiningen/tree/master/lein-pprint
         [lein-ancient "0.6.12"] ; Check for outdated dependencies https://github.com/xsc/lein-ancient
