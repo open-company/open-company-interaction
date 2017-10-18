@@ -1,6 +1,7 @@
 (ns oc.interaction.representations.interaction
   "Resource representations for OpenCompany interactions."
-  (:require [defun.core :refer (defun defun-)]
+  (:require [clojure.string :as string]
+            [defun.core :refer (defun defun-)]
             [cheshire.core :as json]
             [oc.lib.hateoas :as hateoas]
             [oc.interaction.config :as config]))
@@ -10,7 +11,12 @@
 
 (def reaction-media-type "application/vnd.open-company.reaction.v1+json")
 
-(def representation-props [:body :reaction :author :created-at :updated-at])
+(def representation-props [:uuid :body :reaction :author :reactions :created-at :updated-at])
+
+(defn- map-kv
+  "Utility function to do an operation on the value of every key in a map."
+  [f coll]
+  (reduce-kv (fn [m k v] (assoc m k (f v))) (empty coll) coll))
 
 (defun url 
 
@@ -47,6 +53,37 @@
   [interaction user]
   (if (= (-> interaction :author :user-id) (:user-id user)) :author :none))
 
+(defn- comment-reaction-link
+  "Create a reactions url using the resource url for the comment"
+  [reaction interaction]
+  (let [split-url (string/split (:href (first (:links interaction))) #"/" )
+        base-url (take 6 split-url)
+        interaction-uuid (last split-url)]
+    (str (string/join "/" base-url) "/" interaction-uuid "/reactions/" reaction "/on")))
+
+(defn- comment-reaction-and-link
+  "Given the reaction and comment, return a map representation of the reaction for use in the API."
+  [reaction interaction reacted?]
+  (let [reaction-uuid (first reaction)]
+    {:reaction reaction-uuid
+     :reacted reacted?
+     :count (last reaction)
+     :links [(reaction-link (comment-reaction-link reaction-uuid interaction) reacted?)]}))
+
+(defn- comment-reactions
+  [interaction user]
+  (if (:body interaction)
+    (let [default-reactions (apply hash-map (interleave ["Agree"] (repeat [])))
+          grouped-reactions (merge default-reactions
+                                   (group-by :reaction (:reactions interaction))) ; reactions grouped by unicode character
+          counted-reactions-map (map-kv count grouped-reactions) ; how many for each character?
+          counted-reactions (map #(vec [% (get counted-reactions-map %)]) (keys counted-reactions-map))
+          reaction-authors (map #(:user-id (:author %)) (:reactions interaction))
+          reacted? (not (empty? (filter #(= % user) (vec reaction-authors))))]
+      (assoc interaction :reactions
+             (map #(comment-reaction-and-link % interaction reacted?) counted-reactions)))
+      interaction))
+
 (defn interaction-representation
   "Given an interaction, create a representation."
   [interaction access-level]
@@ -68,16 +105,17 @@
   "
   [org-uuid board-uuid resource-uuid interactions user]
   (let [collection-url (str (url org-uuid board-uuid resource-uuid) "/comments")
-        links [(hateoas/self-link collection-url {:accept comment-collection-media-type})]]
+        links [(hateoas/self-link collection-url {:accept comment-collection-media-type})]
+        interactions-with-links (map #(interaction-representation % (access % user)) interactions)
+        user-id (str (:user-id user))]
     (json/generate-string
       {:collection {:version hateoas/json-collection-version
                     :href collection-url
                     :links links
-                    :items (map #(select-keys (interaction-links % (access % user)) (conj representation-props :links))
-                              interactions)}}
+                    :items (map #(comment-reactions % user-id) interactions-with-links)}}
         {:pretty config/pretty?})))
 
- (defn render-reaction
+(defn render-reaction
   "
   Given a unicode character, a list of reactions, and an indication if the user reacted or not, render a reaction
   for the REST API.

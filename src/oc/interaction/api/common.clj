@@ -108,6 +108,7 @@
   (when-let* [org (first (db-common/read-resources conn "orgs" "uuid" org-uuid))
               board (db-common/read-resource conn "boards" board-uuid)
               board-org? (= (:org-uuid board) org-uuid)
-              resource (or (db-common/read-resource conn "entries" resource-uuid)
+              resource (or (db-common/read-resource conn "interactions" resource-uuid)
+                           (db-common/read-resource conn "entries" resource-uuid)
                            (db-common/read-resource conn "stories" resource-uuid))]
     (merge resource {:org-slug (:slug org) :board-slug (:slug board)})))
