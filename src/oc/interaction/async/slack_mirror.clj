@@ -114,7 +114,6 @@
 ;; ----- DB Persistence -----
 
 (def entry-table-name "entries")
-(def story-table-name "stories")
 
 (defn- handle-mirror-result
   "Store Slack thread (ts) in interaction for future replies."
@@ -122,12 +121,10 @@
   (when-not (:thread slack-channel) ; nothing to do if comment already has a Slack thread
     (pool/with-pool [conn db-pool]
       (if-let* [slack-thread (assoc slack-channel :thread (:ts result))
-                original-resource (or (db-common/read-resource conn entry-table-name (:resource-uuid interaction))
-                                      (db-common/read-resource conn story-table-name (:resource-uuid interaction)))
-                table-name (if (:status original-resource) story-table-name entry-table-name)]
+                original-resource (db-common/read-resource conn entry-table-name (:resource-uuid interaction))]
         (do
           (timbre/info "Persisting slack thread:" slack-thread "to resource:" (:resource-uuid interaction))
-          (db-common/update-resource conn table-name :uuid original-resource
+          (db-common/update-resource conn entry-table-name :uuid original-resource
               (merge original-resource {:slack-thread slack-thread}) (:updated-at original-resource)))
 
         (timbre/error "Unable to persist slack thread:" result "to resource:" (:resource-uuid interaction))))))
@@ -140,10 +137,8 @@
   [db-pool channel-id thread body]
   (timbre/debug "Checking for slack thread:" thread "on channel:" channel-id)
   (pool/with-pool [conn db-pool]
-    (when-let [resource (or (first (db-common/read-resources conn entry-table-name
-                              "slack-thread-channel-id-thread" [[channel-id thread]]))
-                            (first (db-common/read-resources conn story-table-name
-                              "slack-thread-channel-id-thread" [[channel-id thread]])))]
+    (when-let [resource (first (db-common/read-resources conn entry-table-name
+                          "slack-thread-channel-id-thread" [[channel-id thread]]))]
       (timbre/debug "Found resource:" (:uuid resource) "for slack thread:" thread "on channel:" channel-id)
       ;; request to lookup the comment's author
       (>!! lookup-chan {:resource resource :message body}))))
