@@ -13,7 +13,7 @@
 
   ;; All profile dependencies
   :dependencies [
-    [org.clojure/clojure "1.9.0-beta2"] ; Lisp on the JVM http://clojure.org/documentation
+    [org.clojure/clojure "1.9.0-beta3"] ; Lisp on the JVM http://clojure.org/documentation
     [org.clojure/core.cache "0.6.5"] ; Clojure in-memory caching https://github.com/clojure/core.cache
     [org.clojure/tools.cli "0.3.5"] ; Command-line parsing https://github.com/clojure/tools.cli
     [ring/ring-devel "1.6.2"] ; Web application library https://github.com/ring-clojure/ring
