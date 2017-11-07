@@ -55,23 +55,22 @@
 
 (defn- comment-reaction-link
   "Create a reactions url using the resource url for the comment"
-  [reaction interaction]
-  (let [split-url (string/split (:href (first (:links interaction))) #"/" )
-        base-url (take 6 split-url)
-        interaction-uuid (last split-url)]
-    (str (string/join "/" base-url) "/" interaction-uuid "/reactions/" reaction "/on")))
+  [reaction interaction comment-url]
+  (let [base-url (take 6 (string/split comment-url #"/"))
+        comment-uuid (:uuid interaction)]
+    (str base-url "/" comment-uuid "/reactions/" reaction "/on")))
 
 (defn- comment-reaction-and-link
   "Given the reaction and comment, return a map representation of the reaction for use in the API."
-  [reaction interaction reacted?]
+  [reaction interaction reacted? collection-url]
   (let [reaction-uuid (first reaction)]
     {:reaction reaction-uuid
      :reacted reacted?
      :count (last reaction)
-     :links [(reaction-link (comment-reaction-link reaction-uuid interaction) reacted?)]}))
+     :links [(reaction-link (comment-reaction-link reaction-uuid interaction collection-url) reacted?)]}))
 
 (defn- comment-reactions
-  [interaction user]
+  [interaction user collection-url]
   (if (:body interaction)
     (let [default-reactions (apply hash-map (interleave ["Agree"] (repeat [])))
           grouped-reactions (merge default-reactions
@@ -81,7 +80,7 @@
           reaction-authors (map #(:user-id (:author %)) (:reactions interaction))
           reacted? (not (empty? (filter #(= % user) (vec reaction-authors))))]
       (assoc interaction :reactions
-             (map #(comment-reaction-and-link % interaction reacted?) counted-reactions)))
+             (map #(comment-reaction-and-link % interaction reacted? collection-url) counted-reactions)))
       interaction))
 
 (defn interaction-representation
@@ -112,7 +111,7 @@
       {:collection {:version hateoas/json-collection-version
                     :href collection-url
                     :links links
-                    :items (map #(comment-reactions % user-id) interactions-with-links)}}
+                    :items (map #(comment-reactions % user-id collection-url) interactions-with-links)}}
         {:pretty config/pretty?})))
 
 (defn render-reaction
