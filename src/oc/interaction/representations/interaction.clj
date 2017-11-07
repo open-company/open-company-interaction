@@ -58,7 +58,7 @@
   [reaction interaction comment-url]
   (let [base-url (take 6 (string/split comment-url #"/"))
         comment-uuid (:uuid interaction)]
-    (str base-url "/" comment-uuid "/reactions/" reaction "/on")))
+    (str (string/join "/" base-url) "/" comment-uuid "/reactions/" reaction "/on")))
 
 (defn- comment-reaction-and-link
   "Given the reaction and comment, return a map representation of the reaction for use in the API."
