@@ -59,3 +59,6 @@
 ;; ----- Slack -----
 
 (defonce slack-verification-token (env :open-company-slack-verification-token))
+
+;; ----- defaults -----
+(defonce default-reactions ["👌"])
