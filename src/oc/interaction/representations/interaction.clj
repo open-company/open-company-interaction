@@ -72,7 +72,7 @@
 (defn- comment-reactions
   [interaction user collection-url]
   (if (:body interaction)
-    (let [default-reactions (apply hash-map (interleave ["Agree"] (repeat [])))
+    (let [default-reactions (apply hash-map (interleave config/default-reactions (repeat [])))
           grouped-reactions (merge default-reactions
                                    (group-by :reaction (:reactions interaction))) ; reactions grouped by unicode character
           counted-reactions-map (map-kv count grouped-reactions) ; how many for each character?
