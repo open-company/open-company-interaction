@@ -78,7 +78,7 @@
           counted-reactions-map (map-kv count grouped-reactions) ; how many for each character?
           counted-reactions (map #(vec [% (get counted-reactions-map %)]) (keys counted-reactions-map))
           reaction-authors (map #(:user-id (:author %)) (:reactions interaction))
-          reacted? (not (empty? (filter #(= % user) (vec reaction-authors))))]
+          reacted? (boolean (seq (filter #(= % user) (vec reaction-authors))))]
       (assoc interaction :reactions
              (map #(comment-reaction-and-link % interaction reacted? collection-url) counted-reactions)))
       interaction))
