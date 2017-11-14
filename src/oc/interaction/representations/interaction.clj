@@ -54,7 +54,7 @@
   (if (= (-> interaction :author :user-id) (:user-id user)) :author :none))
 
 (defn- comment-reaction-link
-  "Create a reactions url using the resource url for the comment"
+  "Create a reactions URL using the resource URL for the comment"
   [reaction interaction comment-url]
   (let [base-url (take 6 (string/split comment-url #"/"))
         comment-uuid (:uuid interaction)]
@@ -72,7 +72,7 @@
 (defn- comment-reactions
   [interaction user collection-url]
   (if (:body interaction)
-    (let [default-reactions (apply hash-map (interleave config/default-reactions (repeat [])))
+    (let [default-reactions (apply hash-map (interleave config/default-comment-reactions (repeat [])))
           grouped-reactions (merge default-reactions
                                    (group-by :reaction (:reactions interaction))) ; reactions grouped by unicode character
           counted-reactions-map (map-kv count grouped-reactions) ; how many for each character?
