@@ -4,6 +4,7 @@
             [if-let.core :refer (if-let* when-let*)]
             [taoensso.timbre :as timbre]
             [oc.lib.db.common :as db-common]
+            [oc.interaction.representations.interaction :as rep]
             [oc.interaction.resources.interaction :as interact-res]
             [oc.interaction.async.watcher :as watcher]
             [oc.interaction.async.slack-mirror :as mirror]))
@@ -88,12 +89,15 @@
                               (interact-res/create-reaction! conn new-interaction))] ; Create the reaction
     ;; Interaction creation succeeded
     (let [uuid (:uuid interact-result)
-          comment? (:body interact-result)]
+          comment? (:body interact-result)
+          interaction (if comment?
+                        (rep/render-ws-comment interact-result (:user ctx))
+                        interact-result)]
       (timbre/info "Created interaction:" uuid)
       ;; Send the interaction to the watcher for event handling
       (watcher/notify-watcher (if comment? :interaction-comment/add
                                            :interaction-reaction/add)
-                              interact-result
+                              interaction
                               reaction-count)
       ;; Send the a comment to the mirror for mirroring to Slack
       (when comment? (notify-mirror conn (:user ctx) (:existing-resource ctx) interact-result))

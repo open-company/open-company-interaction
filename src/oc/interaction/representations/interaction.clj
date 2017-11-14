@@ -40,7 +40,8 @@
 
 (defn- delete-link [interaction] (hateoas/delete-link (url interaction)))
 
-(defn- interaction-links [interaction access-level]
+(defn- interaction-links
+  [interaction access-level]
   (let [links (if (= access-level :author) [(update-link interaction) (delete-link interaction)] [])]
     (assoc interaction :links links)))
 
@@ -80,7 +81,7 @@
           reaction-authors (map #(:user-id (:author %)) (:reactions interaction))
           reacted? (boolean (seq (filter #(= % user) (vec reaction-authors))))]
       (assoc interaction :reactions
-             (map #(comment-reaction-and-link % interaction reacted? collection-url) counted-reactions)))
+             (vec (map #(comment-reaction-and-link % interaction reacted? collection-url) counted-reactions))))
       interaction))
 
 (defn interaction-representation
@@ -89,6 +90,16 @@
   (-> interaction
     (interaction-links access-level)
     (select-keys (conj representation-props :links))))
+
+(defn render-ws-comment
+  "Given a comment create the data to send over the websocket."
+  [comment user]
+  (let [collection-url (str (url (:org-uuid comment)
+                                 (:board-uuid comment)
+                                 (:resource-uuid comment) "/comments"))
+        comment-with-link (interaction-links comment
+                                             (access comment user))]
+    (comment-reactions comment-with-link (str (:user-id user)) collection-url)))
 
 (defn render-interaction
   "Given an interaction, create a JSON representation for the REST API."
