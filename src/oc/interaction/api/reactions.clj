@@ -1,7 +1,7 @@
 (ns oc.interaction.api.reactions
   "Liberator API for reaction resources."
   (:require [if-let.core :refer (if-let*)]
-            [compojure.core :as compojure :refer (ANY OPTIONS POST DELETE)]
+            [compojure.core :as compojure :refer (ANY OPTIONS POST)]
             [liberator.core :refer (defresource by-method)]
             [oc.lib.db.pool :as pool]
             [oc.lib.api.common :as api-common]
@@ -82,12 +82,80 @@
                             (interact-res/get-reactions-by-resource conn resource-uuid reaction-unicode) false)
                           (api-common/missing-response))))
 
+;; A resource for creating a new reaction
+(defresource new-reaction [conn org-uuid board-uuid resource-uuid]
+  (api-common/open-company-authenticated-resource config/passphrase) ; verify validity and presence of required JWToken
+
+  :allowed-methods [:options :post]
+
+  ;; Media type client accepts
+  :available-media-types [interact-rep/reaction-media-type]
+  :handle-not-acceptable (api-common/only-accept 406 interact-rep/reaction-media-type)
+
+  ;; Media type client sends
+  :known-content-type? (by-method {
+    :options true
+    :post (fn [ctx] (api-common/known-content-type? ctx "text/plain"))})
+
+  ;; Authorization
+  ;; TODO
+  :allowed? true
+
+  ;; Validations
+  :malformed? false
+  :processable? (by-method {
+    :options true
+    :post (fn [ctx] (if-let* [reaction-unicode (-> ctx :request :body slurp)
+                              _string (string? reaction-unicode)]
+                              ;; TODO need to verify it's just 1 Unicode char, counting code points doesn't
+                              ;; work because something like 🇫🇰 is 2
+                              ;; _length (= 1 (.codePointCount reaction-unicode 0 (count reaction-unicode)))]
+                          {:reaction-unicode reaction-unicode}
+                          [false {:reason "Provide a single unicode character in the request body as a reaction."}]))})
+
+  ;; Existentialism
+  :exists? (fn [ctx] (if (common/resource-exists? conn org-uuid board-uuid (:reaction-unicode ctx))
+                        (let [reactions (interact-res/get-reactions-by-resource conn resource-uuid (:reaction-unicode ctx))]
+                          {:existing-reactions reactions
+                           :existing-reaction (reaction-for-user reactions (-> ctx :user :user-id))})
+                        false))
+
+  ;; Actions
+  :post! (fn [ctx] (if (:existing-reaction ctx)
+                      true
+                      (create-reaction conn ctx
+                                            org-uuid
+                                            board-uuid
+                                            resource-uuid
+                                            (:reaction-unicode ctx)
+                                            (-> ctx :existing-reactions count inc))))
+
+  ;; Responses
+  :respond-with-entity? true
+  :handle-created (fn [ctx] (if-let* [reaction (or (:created-interaction ctx) (:existing-reaction ctx))
+                                      existing-reactions (or (:existing-reactions ctx) [])
+                                      reactions (if (:created-interaction ctx)
+                                                  (conj existing-reactions reaction)
+                                                  existing-reactions)]
+                              (interact-rep/render-reaction org-uuid board-uuid resource-uuid (:reaction reaction)
+                                reactions true)
+                              (api-common/missing-response)))
+  :handle-unprocessable-entity (fn [ctx]
+    (api-common/unprocessable-entity-response (:reason ctx))))
+
 ;; ----- Routes -----
 
 (defn routes [sys]
   (let [db-pool (-> sys :db-pool :pool)]
     (compojure/routes
-      ;; Reaction create/delete
+      ;; Reaction create
+      (OPTIONS "/orgs/:org-uuid/boards/:board-uuid/resources/:resource-uuid/reactions/"
+        [org-uuid board-uuid resource-uuid]
+        (pool/with-pool [conn db-pool] (new-reaction conn org-uuid board-uuid resource-uuid)))
+      (POST "/orgs/:org-uuid/boards/:board-uuid/resources/:resource-uuid/reactions/"
+        [org-uuid board-uuid resource-uuid reaction-unicode]
+        (pool/with-pool [conn db-pool] (new-reaction conn org-uuid board-uuid resource-uuid)))
+      ;; Existing reaction create/delete for the user
       (ANY "/orgs/:org-uuid/boards/:board-uuid/resources/:resource-uuid/reactions/:reaction-unicode/on"
         [org-uuid board-uuid resource-uuid reaction-unicode]
         (pool/with-pool [conn db-pool] (reaction conn org-uuid board-uuid resource-uuid reaction-unicode))))))
