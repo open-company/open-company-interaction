@@ -153,7 +153,7 @@
         [org-uuid board-uuid resource-uuid]
         (pool/with-pool [conn db-pool] (new-reaction conn org-uuid board-uuid resource-uuid)))
       (POST "/orgs/:org-uuid/boards/:board-uuid/resources/:resource-uuid/reactions/"
-        [org-uuid board-uuid resource-uuid reaction-unicode]
+        [org-uuid board-uuid resource-uuid]
         (pool/with-pool [conn db-pool] (new-reaction conn org-uuid board-uuid resource-uuid)))
       ;; Existing reaction create/delete for the user
       (ANY "/orgs/:org-uuid/boards/:board-uuid/resources/:resource-uuid/reactions/:reaction-unicode/on"
