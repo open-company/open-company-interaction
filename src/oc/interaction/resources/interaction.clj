@@ -155,9 +155,10 @@
   (sort-by :created-at (db-common/read-resources conn table-name :resource-uuid resource-uuid)))
 
 (schema/defn ^:always-validate get-comments-by-resource
-  "Given the UUID of the resource, return the comments (sorted by :created-at)."
+  "Given the UUID of the resource, return the comments (sorted by :created-at) and the related reactions."
   [conn resource-uuid :- lib-schema/UniqueID]
-  (filter :body (get-interactions-by-resource conn resource-uuid)))
+  (let [comments (filter :body (get-interactions-by-resource conn resource-uuid))]
+    (map #(assoc % :reactions (filter :reaction (get-interactions-by-resource conn (:uuid %)))) comments)))
 
 (schema/defn ^:always-validate get-reactions-by-resource
   "

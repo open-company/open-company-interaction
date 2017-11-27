@@ -59,3 +59,8 @@
 ;; ----- Slack -----
 
 (defonce slack-verification-token (env :open-company-slack-verification-token))
+
+;; ----- OpenCompany -----
+
+(defonce default-comment-reactions ["👍"])
+

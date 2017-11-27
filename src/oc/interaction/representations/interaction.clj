@@ -1,6 +1,7 @@
 (ns oc.interaction.representations.interaction
   "Resource representations for OpenCompany interactions."
-  (:require [defun.core :refer (defun defun-)]
+  (:require [clojure.string :as string]
+            [defun.core :refer (defun defun-)]
             [cheshire.core :as json]
             [oc.lib.hateoas :as hateoas]
             [oc.interaction.config :as config]))
@@ -10,7 +11,12 @@
 
 (def reaction-media-type "application/vnd.open-company.reaction.v1+json")
 
-(def representation-props [:body :reaction :author :created-at :updated-at])
+(def representation-props [:uuid :body :reaction :author :reactions :created-at :updated-at])
+
+(defn- map-kv
+  "Utility function to do an operation on the value of every key in a map."
+  [f coll]
+  (reduce-kv (fn [m k v] (assoc m k (f v))) (empty coll) coll))
 
 (defun url 
 
@@ -34,7 +40,8 @@
 
 (defn- delete-link [interaction] (hateoas/delete-link (url interaction)))
 
-(defn- interaction-links [interaction access-level]
+(defn- interaction-links
+  [interaction access-level]
   (let [links (if (= access-level :author) [(update-link interaction) (delete-link interaction)] [])]
     (assoc interaction :links links)))
 
@@ -47,12 +54,52 @@
   [interaction user]
   (if (= (-> interaction :author :user-id) (:user-id user)) :author :none))
 
+(defn- comment-reaction-link
+  "Create a reactions URL using the resource URL for the comment"
+  [reaction interaction comment-url]
+  (let [base-url (take 6 (string/split comment-url #"/"))
+        comment-uuid (:uuid interaction)]
+    (str (string/join "/" base-url) "/" comment-uuid "/reactions/" reaction "/on")))
+
+(defn- comment-reaction-and-link
+  "Given the reaction and comment, return a map representation of the reaction for use in the API."
+  [reaction interaction reacted? collection-url]
+  (let [reaction-uuid (first reaction)]
+    {:reaction reaction-uuid
+     :reacted reacted?
+     :count (last reaction)
+     :links [(reaction-link (comment-reaction-link reaction-uuid interaction collection-url) reacted?)]}))
+
+(defn- comment-reactions
+  [interaction user collection-url]
+  (if (:body interaction)
+    (let [default-reactions (apply hash-map (interleave config/default-comment-reactions (repeat [])))
+          grouped-reactions (merge default-reactions
+                                   (group-by :reaction (:reactions interaction))) ; reactions grouped by unicode character
+          counted-reactions-map (map-kv count grouped-reactions) ; how many for each character?
+          counted-reactions (map #(vec [% (get counted-reactions-map %)]) (keys counted-reactions-map))
+          reaction-authors (map #(:user-id (:author %)) (:reactions interaction))
+          reacted? (boolean (seq (filter #(= % user) (vec reaction-authors))))]
+      (assoc interaction :reactions
+             (vec (map #(comment-reaction-and-link % interaction reacted? collection-url) counted-reactions))))
+      interaction))
+
 (defn interaction-representation
   "Given an interaction, create a representation."
   [interaction access-level]
   (-> interaction
     (interaction-links access-level)
     (select-keys (conj representation-props :links))))
+
+(defn render-ws-comment
+  "Given a comment create the data to send over the websocket."
+  [comment user]
+  (let [collection-url (str (url (:org-uuid comment)
+                                 (:board-uuid comment)
+                                 (:resource-uuid comment) "/comments"))
+        comment-with-link (interaction-links comment
+                                             (access comment user))]
+    (comment-reactions comment-with-link (str (:user-id user)) collection-url)))
 
 (defn render-interaction
   "Given an interaction, create a JSON representation for the REST API."
@@ -68,16 +115,17 @@
   "
   [org-uuid board-uuid resource-uuid interactions user]
   (let [collection-url (str (url org-uuid board-uuid resource-uuid) "/comments")
-        links [(hateoas/self-link collection-url {:accept comment-collection-media-type})]]
+        links [(hateoas/self-link collection-url {:accept comment-collection-media-type})]
+        interactions-with-links (map #(interaction-representation % (access % user)) interactions)
+        user-id (str (:user-id user))]
     (json/generate-string
       {:collection {:version hateoas/json-collection-version
                     :href collection-url
                     :links links
-                    :items (map #(select-keys (interaction-links % (access % user)) (conj representation-props :links))
-                              interactions)}}
+                    :items (map #(comment-reactions % user-id collection-url) interactions-with-links)}}
         {:pretty config/pretty?})))
 
- (defn render-reaction
+(defn render-reaction
   "
   Given a unicode character, a list of reactions, and an indication if the user reacted or not, render a reaction
   for the REST API.
