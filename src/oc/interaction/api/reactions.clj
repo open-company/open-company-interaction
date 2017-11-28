@@ -106,10 +106,10 @@
   :processable? (by-method {
     :options true
     :post (fn [ctx] (if-let* [reaction-unicode (-> ctx :request :body slurp)
-                              _string (string? reaction-unicode)]
+                              _string (string? reaction-unicode)
                               ;; TODO need to verify it's just 1 Unicode char, counting code points doesn't
-                              ;; work because something like 🇫🇰 is 2
-                              ;; _length (= 1 (.codePointCount reaction-unicode 0 (count reaction-unicode)))]
+                              ;; work because something like 🇫🇰 is 2, for now just verify it's 2 or less code points
+                              _length (<= (.codePointCount reaction-unicode 0 (count reaction-unicode)) 2)]
                           {:reaction-unicode reaction-unicode}
                           [false {:reason "Provide a single unicode character in the request body as a reaction."}]))})
 
@@ -155,7 +155,6 @@
       (OPTIONS "/orgs/:org-uuid/boards/:board-uuid/resources/:resource-uuid/reactions/"
         [org-uuid board-uuid resource-uuid]
         (pool/with-pool [conn db-pool] (new-reaction conn org-uuid board-uuid resource-uuid)))
-
       (POST "/orgs/:org-uuid/boards/:board-uuid/resources/:resource-uuid/reactions"
         [org-uuid board-uuid resource-uuid]
         (pool/with-pool [conn db-pool] (new-reaction conn org-uuid board-uuid resource-uuid)))

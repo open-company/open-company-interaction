@@ -31,6 +31,9 @@
        "/comments/" (:interaction-uuid interaction)
        "/reactions/" (:uuid interaction)))
   
+  ([interaction :guard :reaction]
+  (url (:org-uuid interaction) (:board-uuid interaction) (:resource-uuid interaction) (:reaction interaction)))
+
   ([interaction]
   (str (url (:org-uuid interaction) (:board-uuid interaction) (:resource-uuid interaction))
     "/comments/" (:uuid interaction))))
