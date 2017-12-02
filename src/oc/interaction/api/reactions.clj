@@ -108,8 +108,8 @@
     :post (fn [ctx] (if-let* [reaction-unicode (-> ctx :request :body slurp)
                               _string (string? reaction-unicode)
                               ;; TODO need to verify it's just 1 Unicode char, counting code points doesn't
-                              ;; work because something like 🇫🇰 is 2, for now just verify it's 2 or less code points
-                              _length (<= (.codePointCount reaction-unicode 0 (count reaction-unicode)) 2)]
+                              ;; work because something like 🇫🇰 is 2, for now just verify it's 4 or less code points
+                              _length (<= (.codePointCount reaction-unicode 0 (count reaction-unicode)) 4)]
                           {:reaction-unicode reaction-unicode}
                           [false {:reason "Provide a single unicode character in the request body as a reaction."}]))})
 
