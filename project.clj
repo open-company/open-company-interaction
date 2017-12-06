@@ -46,7 +46,7 @@
 
   ;; All profile plugins
   :plugins [
-    [lein-ring "0.12.1"] ; Common ring tasks https://github.com/weavejester/lein-ring
+    [lein-ring "0.12.2"] ; Common ring tasks https://github.com/weavejester/lein-ring
     [lein-environ "1.1.0"] ; Get environment settings from different sources https://github.com/weavejester/environ
   ]
 
