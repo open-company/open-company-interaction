@@ -26,6 +26,19 @@
         author (:user ctx)]
     (common/create-interaction conn {:new-interaction (interact-res/->reaction interaction-map author)} reaction-count)))
 
+;; ----- Responses -----
+
+(defn- reaction-response
+  [ctx org-uuid board-uuid resource-uuid]
+  (if-let* [reaction (or (:created-interaction ctx) (:existing-reaction ctx))
+                                  existing-reactions (or (:existing-reactions ctx) [])
+                                  reactions (if (:created-interaction ctx)
+                                              (conj existing-reactions reaction)
+                                              existing-reactions)]
+                          (interact-rep/render-reaction org-uuid board-uuid resource-uuid (:reaction reaction)
+                            reactions true)
+                          (api-common/missing-response)))
+
 ;; ----- Resources - see: http://clojure-liberator.github.io/liberator/assets/img/decision-graph.svg
 
 ;; A resource for operations on a reaction
@@ -69,18 +82,12 @@
 
   ;; Responses
   :respond-with-entity? true
-  :handle-created (fn [ctx] (if-let* [reaction (or (:created-interaction ctx) (:existing-reaction ctx))
-                                      existing-reactions (:existing-reactions ctx)
-                                      reactions (if (:created-interaction ctx)
-                                                  (conj existing-reactions reaction)
-                                                  existing-reactions)]
-                              (interact-rep/render-reaction org-uuid board-uuid resource-uuid reaction-unicode
-                                reactions true)
-                              (api-common/missing-response)))
+  :handle-created (fn [ctx] (reaction-response ctx org-uuid board-uuid resource-uuid))
   :handle-ok (fn [ctx] (if (:existing-reaction ctx)
                           (interact-rep/render-reaction org-uuid board-uuid resource-uuid reaction-unicode
                             (interact-res/get-reactions-by-resource conn resource-uuid reaction-unicode) false)
                           (api-common/missing-response))))
+
 
 ;; A resource for creating a new reaction
 (defresource new-reaction [conn org-uuid board-uuid resource-uuid]
@@ -114,32 +121,29 @@
                           [false {:reason "Provide a single unicode character in the request body as a reaction."}]))})
 
   ;; Existentialism
-  :exists? (fn [ctx] (if (common/resource-exists? conn org-uuid board-uuid (:reaction-unicode ctx))
+  :exists? (fn [ctx] (if (common/resource-exists? conn org-uuid board-uuid resource-uuid)
                         (let [reactions (interact-res/get-reactions-by-resource conn resource-uuid (:reaction-unicode ctx))]
                           {:existing-reactions reactions
-                           :existing-reaction (reaction-for-user reactions (-> ctx :user :user-id))})
+                           :existing-reaction (reaction-for-user reactions (-> ctx :user :user-id))
+                           :existing? true})
                         false))
 
   ;; Actions
-  :post! (fn [ctx] (if (:existing-reaction ctx)
-                      true
-                      (create-reaction conn ctx
-                                            org-uuid
-                                            board-uuid
-                                            resource-uuid
-                                            (:reaction-unicode ctx)
-                                            (-> ctx :existing-reactions count inc))))
+  :post! (fn [ctx] (when (:existing? ctx) ; when the resource does exist
+                      (if (:existing-reaction ctx)
+                        true ; this reaction already exists
+                        (create-reaction conn ctx
+                                              org-uuid
+                                              board-uuid
+                                              resource-uuid
+                                              (:reaction-unicode ctx)
+                                              (-> ctx :existing-reactions count inc)))))
 
   ;; Responses
   :respond-with-entity? true
-  :handle-created (fn [ctx] (if-let* [reaction (or (:created-interaction ctx) (:existing-reaction ctx))
-                                      existing-reactions (or (:existing-reactions ctx) [])
-                                      reactions (if (:created-interaction ctx)
-                                                  (conj existing-reactions reaction)
-                                                  existing-reactions)]
-                              (interact-rep/render-reaction org-uuid board-uuid resource-uuid (:reaction reaction)
-                                reactions true)
-                              (api-common/missing-response)))
+  :new? (fn [ctx] (if (:existing-reaction ctx) false true))
+  :handle-created (fn [ctx] (reaction-response ctx org-uuid board-uuid resource-uuid))
+  :handle-ok (fn [ctx] (reaction-response ctx org-uuid board-uuid resource-uuid))
   :handle-unprocessable-entity (fn [ctx]
     (api-common/unprocessable-entity-response (:reason ctx))))
 

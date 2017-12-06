@@ -6,8 +6,8 @@
             [oc.interaction.app :as app]
             [oc.interaction.components :as components]))
 
-(def system nil)
-(def conn nil)
+(defonce system nil)
+(defonce conn nil)
 
 (defn init
   ([] (init c/interaction-server-port))
