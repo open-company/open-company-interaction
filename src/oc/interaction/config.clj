@@ -63,4 +63,3 @@
 ;; ----- OpenCompany -----
 
 (defonce default-comment-reactions ["♥️"])
-
