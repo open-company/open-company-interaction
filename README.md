@@ -2,8 +2,7 @@
 
 [![MPL License](http://img.shields.io/badge/license-MPL-blue.svg?style=flat)](https://www.mozilla.org/MPL/2.0/)
 [![Build Status](http://img.shields.io/travis/open-company/open-company-interaction.svg?style=flat)](https://travis-ci.org/open-company/open-company-interaction)
-[![Dependency Status](https://www.versioneye.com/user/projects/592ac555a8a0560033ef3675/badge.svg?style=flat)](https://www.versioneye.com/user/projects/592ac555a8a0560033ef3675)
-[![Roadmap on Trello](http://img.shields.io/badge/roadmap-trello-blue.svg?style=flat)](https://trello.com/b/3naVWHgZ/open-company-development)
+[![Dependencies Status](https://versions.deps.co/open-company/open-company-interaction/status.svg)](https://versions.deps.co/open-company/open-company-interaction)
 
 
 ## Background
@@ -42,7 +41,7 @@ Most of the dependencies are internal, meaning [Leiningen](https://github.com/te
 
 * [Java 8](http://www.oracle.com/technetwork/java/javase/downloads/index.html) - a Java 8 JRE is needed to run Clojure
 * [Leiningen](https://github.com/technomancy/leiningen) 2.5.1+ - Clojure's build and dependency management tool
-* [RethinkDB](http://rethinkdb.com/) v2.3.5+ - a multi-modal (document, key/value, relational) open source NoSQL database
+* [RethinkDB](http://rethinkdb.com/) v2.3.6+ - a multi-modal (document, key/value, relational) open source NoSQL database
 * [ngrok](https://ngrok.com/) - Secure web tunnel to localhost
 
 #### Java

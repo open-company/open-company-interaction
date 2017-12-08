@@ -102,7 +102,7 @@
             board-slug (:board-slug resource)
             resource-uuid (:uuid resource)
             description (or (:headline resource) (:title resource))
-            resource-url (s/join "/" [c/ui-server-url org-slug board-slug "update" resource-uuid])]
+            resource-url (s/join "/" [c/ui-server-url org-slug board-slug "post" resource-uuid])]
 
     (str intro " <" resource-url "|" description ">\n> " text)
     
@@ -186,10 +186,18 @@
                               (slack/echo-message token channel-id thread text)
                               (slack/echo-message token channel-id (initial-message echo-intro text resource interaction)))]
                 (if (:ok result)
+                  ;; Echo was successful
                   (do 
                     (timbre/info "Echoed to Slack:" uuid)
                     (handle-mirror-result db-pool result slack-channel interaction))
-                  (timbre/error "Unable to echo comment:" uuid "to Slack:" result))))
+                  ;; Echo was NOT successful
+                  (if bot-token
+                    ;; Can't echo directly with this user, let's try proxying instead
+                    (do
+                      (timbre/info "Unable to echo comment:" uuid "to Slack:" result "trying to proxy instead")
+                      (>!! proxy-chan message))
+                    ;; No bot, so nothing we can do but error out the echo request
+                    (timbre/error "Unable to echo comment:" uuid "to Slack:" result)))))
             (catch Exception e
               (timbre/error e)))))))))
 

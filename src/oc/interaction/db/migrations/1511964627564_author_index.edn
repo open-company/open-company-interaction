@@ -1,0 +1,10 @@
+(ns oc.interaction.db.migrations.author-index
+  (:require [rethinkdb.query :as r]
+            [oc.lib.db.migrations :as m]
+            [oc.interaction.config :as config]
+            [oc.interaction.resources.interaction :as inter-res]))
+
+(defn up [conn]
+  (println (m/create-compound-index conn inter-res/table-name "author-uuid"
+              (r/fn [row] (r/get-field row [:author :user-id]))))
+  true) ; return true on success
