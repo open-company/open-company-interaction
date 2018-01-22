@@ -15,6 +15,7 @@
             [clojure.core.cache :as cache]
             [if-let.core :refer (if-let*)]
             [taoensso.timbre :as timbre]
+            [jsoup.soup :as soup]
             [oc.lib.db.pool :as pool]
             [oc.lib.slack :as slack]
             [oc.lib.db.common :as db-common]
@@ -178,7 +179,7 @@
                   slack-channel (if bot-token (assoc channel :bot-token bot-token) channel)
                   channel-id (:channel-id slack-channel)
                   thread (:thread slack-channel)
-                  text (:body interaction)]
+                  text (.text (soup/parse (:body interaction)))]
               (if thread
                 (timbre/info "Echoing comment to Slack:" uuid "on thread" thread)
                 (timbre/info "Echoing comment to Slack:" uuid "as a new thread"))
@@ -224,7 +225,7 @@
                   channel-id (:channel-id slack-channel)
                   thread (:thread slack-channel)
                   author (-> message :author :name)
-                  text (str author " said: " (:body interaction))]
+                  text (str author " said: " (.text (soup/parse (:body interaction))))]
               (if thread
                 (timbre/info "Proxying comment to Slack:" uuid "on thread:" thread)
                 (timbre/info "Proxying comment to Slack:" uuid "as a new thread"))
