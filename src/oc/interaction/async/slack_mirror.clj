@@ -25,8 +25,7 @@
 
 ;; ----- Slack message copy -----
 
-(def echo-intro "commenting on:")
-(def proxy-intro "There's a comment on:")
+(def echo-intro "commented on:")
 
 ;; ----- Slack defaults -----
 
@@ -225,13 +224,14 @@
                   channel-id (:channel-id slack-channel)
                   thread (:thread slack-channel)
                   author (-> message :author :name)
-                  text (str author " said: " (.text (soup/parse (:body interaction))))]
+                  text (.text (soup/parse (:body interaction)))]
               (if thread
                 (timbre/info "Proxying comment to Slack:" uuid "on thread:" thread)
                 (timbre/info "Proxying comment to Slack:" uuid "as a new thread"))
               (let [result (if thread
-                              (slack/proxy-message token channel-id thread text)
-                              (slack/proxy-message token channel-id (initial-message proxy-intro text resource interaction)))]
+                              (slack/proxy-message token channel-id thread (str "*" author "* said:\n> " text))
+                              (slack/proxy-message token channel-id
+                                (initial-message (str author " " echo-intro) text resource interaction)))]
                 (if (:ok result)
                   (do
                     (timbre/info "Proxied to Slack:" uuid)
