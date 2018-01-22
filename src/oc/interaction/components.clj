@@ -3,9 +3,9 @@
             [taoensso.timbre :as timbre]
             [org.httpkit.server :as httpkit]
             [oc.lib.db.pool :as pool]
+            [oc.lib.async.watcher :as watcher]
             [oc.interaction.config :as c]
             [oc.interaction.api.websockets :as websockets-api]
-            [oc.interaction.async.watcher :as watcher]
             [oc.interaction.async.slack-mirror :as slack-mirror]))
 
 (defrecord HttpKit [options handler]

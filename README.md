@@ -247,7 +247,7 @@ ngrok http 3002
 Note the URL ngrok provides. It will look like: `http://6ae20d9b.ngrok.io` -> localhost:3002
 
 To configure the Slack to use the ngrok tunnel as the destination of message.channel events. Go to
-[Your Apps](https://api.slack.com/apps) and click the "OpenCompany (Local Development)" app.
+[Your Apps](https://api.slack.com/apps) and click the "Carrot (Local Development)" app.
 
 Click the "Event Subscriptions" navigation in the menu. Click the toggle on.
 

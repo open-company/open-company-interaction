@@ -5,9 +5,9 @@
             [taoensso.timbre :as timbre]
             [compojure.core :as compojure :refer (defroutes GET POST)]
             [taoensso.sente.server-adapters.http-kit :refer (get-sch-adapter)]
+            [oc.lib.async.watcher :as watcher]
             [oc.lib.jwt :as jwt]
-            [oc.interaction.config :as c]
-            [oc.interaction.async.watcher :as watcher]))
+            [oc.interaction.config :as c]))
 
 ;; ----- core.async -----
 
