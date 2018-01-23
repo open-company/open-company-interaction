@@ -15,6 +15,7 @@
             [clojure.core.cache :as cache]
             [if-let.core :refer (if-let*)]
             [taoensso.timbre :as timbre]
+            [jsoup.soup :as soup]
             [oc.lib.db.pool :as pool]
             [oc.lib.slack :as slack]
             [oc.lib.db.common :as db-common]
@@ -24,8 +25,7 @@
 
 ;; ----- Slack message copy -----
 
-(def echo-intro "commenting on:")
-(def proxy-intro "There's a comment on:")
+(def echo-intro "commented on:")
 
 ;; ----- Slack defaults -----
 
@@ -178,7 +178,7 @@
                   slack-channel (if bot-token (assoc channel :bot-token bot-token) channel)
                   channel-id (:channel-id slack-channel)
                   thread (:thread slack-channel)
-                  text (:body interaction)]
+                  text (.text (soup/parse (:body interaction)))]
               (if thread
                 (timbre/info "Echoing comment to Slack:" uuid "on thread" thread)
                 (timbre/info "Echoing comment to Slack:" uuid "as a new thread"))
@@ -224,13 +224,14 @@
                   channel-id (:channel-id slack-channel)
                   thread (:thread slack-channel)
                   author (-> message :author :name)
-                  text (str author " said: " (:body interaction))]
+                  text (.text (soup/parse (:body interaction)))]
               (if thread
                 (timbre/info "Proxying comment to Slack:" uuid "on thread:" thread)
                 (timbre/info "Proxying comment to Slack:" uuid "as a new thread"))
               (let [result (if thread
-                              (slack/proxy-message token channel-id thread text)
-                              (slack/proxy-message token channel-id (initial-message proxy-intro text resource interaction)))]
+                              (slack/proxy-message token channel-id thread (str "*" author "* said:\n> " text))
+                              (slack/proxy-message token channel-id
+                                (initial-message (str author " " echo-intro) text resource interaction)))]
                 (if (:ok result)
                   (do
                     (timbre/info "Proxied to Slack:" uuid)

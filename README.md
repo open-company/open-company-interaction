@@ -40,7 +40,7 @@ Prospective users of [Carrot](https://carrot.io/) should get started by going to
 Most of the dependencies are internal, meaning [Leiningen](https://github.com/technomancy/leiningen) will handle getting them for you. There are a few exceptions:
 
 * [Java 8](http://www.oracle.com/technetwork/java/javase/downloads/index.html) - a Java 8 JRE is needed to run Clojure
-* [Leiningen](https://github.com/technomancy/leiningen) 2.5.1+ - Clojure's build and dependency management tool
+* [Leiningen](https://github.com/technomancy/leiningen) 2.7.1+ - Clojure's build and dependency management tool
 * [RethinkDB](http://rethinkdb.com/) v2.3.6+ - a multi-modal (document, key/value, relational) open source NoSQL database
 * [ngrok](https://ngrok.com/) - Secure web tunnel to localhost
 
@@ -247,7 +247,7 @@ ngrok http 3002
 Note the URL ngrok provides. It will look like: `http://6ae20d9b.ngrok.io` -> localhost:3002
 
 To configure the Slack to use the ngrok tunnel as the destination of message.channel events. Go to
-[Your Apps](https://api.slack.com/apps) and click the "OpenCompany (Local Development)" app.
+[Your Apps](https://api.slack.com/apps) and click the "Carrot (Local Development)" app.
 
 Click the "Event Subscriptions" navigation in the menu. Click the toggle on.
 
@@ -301,4 +301,4 @@ Please note that this project is released with a [Contributor Code of Conduct](h
 
 Distributed under the [Mozilla Public License v2.0](http://www.mozilla.org/MPL/2.0/).
 
-Copyright © 2015-2017 OpenCompany, LLC.
+Copyright © 2017-2018 OpenCompany, LLC.

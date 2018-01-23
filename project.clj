@@ -23,8 +23,9 @@
     [ring-logger-timbre "0.7.6" :exclusions [com.taoensso/encore]] ; Ring logging https://github.com/nberger/ring-logger-timbre
     [compojure "1.6.0"] ; Web routing https://github.com/weavejester/compojure
     [clj-http "3.7.0"] ; HTTP client https://github.com/dakrone/clj-http
+    [clj-soup/clojure-soup "0.1.3"] ; Clojure wrapper for jsoup HTML parser https://github.com/mfornos/clojure-soup
     
-    [open-company/lib "0.14.8"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    [open-company/lib "0.14.15"] ; Library for OC projects https://github.com/open-company/open-company-lib
     ; In addition to common functions, brings in the following common dependencies used by this project:
     ; httpkit - Web server http://http-kit.org/
     ; core.async - Async programming and communication https://github.com/clojure/core.async
@@ -46,7 +47,7 @@
 
   ;; All profile plugins
   :plugins [
-    [lein-ring "0.12.2"] ; Common ring tasks https://github.com/weavejester/lein-ring
+    [lein-ring "0.12.3"] ; Common ring tasks https://github.com/weavejester/lein-ring
     [lein-environ "1.1.0"] ; Get environment settings from different sources https://github.com/weavejester/environ
   ]
 
@@ -61,7 +62,7 @@
         :open-company-auth-passphrase "this_is_a_qa_secret" ; JWT secret
       }
       :dependencies [
-        [midje "1.9.0"] ; Example-based testing https://github.com/marick/Midje
+        [midje "1.9.2-alpha2"] ; Example-based testing https://github.com/marick/Midje
         [ring-mock "0.1.5"] ; Test Ring requests https://github.com/weavejester/ring-mock
       ]
       :plugins [
@@ -88,7 +89,7 @@
         [lein-bikeshed "0.5.0"] ; Check for code smells https://github.com/dakrone/lein-bikeshed
         [lein-checkall "0.1.1"] ; Runs bikeshed, kibit and eastwood https://github.com/itang/lein-checkall
         [lein-pprint "1.2.0"] ; pretty-print the lein project map https://github.com/technomancy/leiningen/tree/master/lein-pprint
-        [lein-ancient "0.6.14"] ; Check for outdated dependencies https://github.com/xsc/lein-ancient
+        [lein-ancient "0.6.15"] ; Check for outdated dependencies https://github.com/xsc/lein-ancient
         [lein-spell "0.1.0"] ; Catch spelling mistakes in docs and docstrings https://github.com/cldwalker/lein-spell
         [lein-deps-tree "0.1.2"] ; Print a tree of project dependencies https://github.com/the-kenny/lein-deps-tree
         [venantius/yagni "0.1.4"] ; Dead code finder https://github.com/venantius/yagni
