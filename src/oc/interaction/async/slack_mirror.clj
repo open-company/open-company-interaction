@@ -90,26 +90,25 @@
       (merge init-author {:name user-name :avatar-url avatar-url})
       init-author)))
  
-(defn- initial-message
+(defn- link-message
   "
-  Given the text of a comment to go to Slack and the comment, make Slack message text that includes an explanation and
-  link to the resource before the message text.
+  Make Slack message text that includes an explanation and link to the resource to use before the message text.
 
-  Link: /<org-slug>/<board-slug>/<resource-uuid>
+  Link structure: /<org-slug>/<board-slug>/<resource-uuid>
   "
-  [intro text resource interaction]
+  [intro resource interaction]
   (if-let* [org-slug (:org-slug resource)
             board-slug (:board-slug resource)
             resource-uuid (:uuid resource)
             description (or (:headline resource) (:title resource))
             resource-url (s/join "/" [c/ui-server-url org-slug board-slug "post" resource-uuid])]
 
-    (str intro " <" resource-url "|" description ">\n> " text)
+    (str intro " <" resource-url "|" description ">")
     
     ;; Not expected to be here, but let's not completely crap the bed
     (do 
       (timbre/error "Unable to make Slack link for comment:" (:uuid interaction))
-      text)))
+      intro)))
 
 ;; ----- DB Persistence -----
 
@@ -184,7 +183,8 @@
                 (timbre/info "Echoing comment to Slack:" uuid "as a new thread"))
               (let [result (if thread
                               (slack/echo-message token channel-id thread text)
-                              (slack/echo-message token channel-id (initial-message echo-intro text resource interaction)))]
+                              (slack/echo-message token channel-id
+                                (link-message echo-intro resource interaction) text))]
                 (if (:ok result)
                   ;; Echo was successful
                   (do 
@@ -223,15 +223,15 @@
                   slack-channel (if bot-token (assoc channel :bot-token bot-token) channel)
                   channel-id (:channel-id slack-channel)
                   thread (:thread slack-channel)
-                  author (-> message :author :name)
-                  text (.text (soup/parse (:body interaction)))]
+                  author (-> interaction :author :name)
+                  text (str "*" author "* said:\n> " (.text (soup/parse (:body interaction))))]
               (if thread
                 (timbre/info "Proxying comment to Slack:" uuid "on thread:" thread)
                 (timbre/info "Proxying comment to Slack:" uuid "as a new thread"))
               (let [result (if thread
-                              (slack/proxy-message token channel-id thread (str "*" author "* said:\n> " text))
+                              (slack/proxy-message token channel-id thread text)
                               (slack/proxy-message token channel-id
-                                (initial-message (str author " " echo-intro) text resource interaction)))]
+                                (link-message (str "*" author "* " echo-intro) resource interaction) text))]
                 (if (:ok result)
                   (do
                     (timbre/info "Proxied to Slack:" uuid)

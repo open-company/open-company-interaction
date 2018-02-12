@@ -25,7 +25,7 @@
     [clj-http "3.7.0"] ; HTTP client https://github.com/dakrone/clj-http
     [clj-soup/clojure-soup "0.1.3"] ; Clojure wrapper for jsoup HTML parser https://github.com/mfornos/clojure-soup
     
-    [open-company/lib "0.14.15"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    [open-company/lib "0.16.0"] ; Library for OC projects https://github.com/open-company/open-company-lib
     ; In addition to common functions, brings in the following common dependencies used by this project:
     ; httpkit - Web server http://http-kit.org/
     ; core.async - Async programming and communication https://github.com/clojure/core.async
@@ -86,7 +86,7 @@
         :log-level "debug"
       }
       :plugins [
-        [lein-bikeshed "0.5.0"] ; Check for code smells https://github.com/dakrone/lein-bikeshed
+        [lein-bikeshed "0.5.1"] ; Check for code smells https://github.com/dakrone/lein-bikeshed
         [lein-checkall "0.1.1"] ; Runs bikeshed, kibit and eastwood https://github.com/itang/lein-checkall
         [lein-pprint "1.2.0"] ; pretty-print the lein project map https://github.com/technomancy/leiningen/tree/master/lein-pprint
         [lein-ancient "0.6.15"] ; Check for outdated dependencies https://github.com/xsc/lein-ancient
