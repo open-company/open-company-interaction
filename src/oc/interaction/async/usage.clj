@@ -4,8 +4,7 @@
   "
   (:require [clojure.core.async :as async :refer [<! >!!]]
             [clojure.walk :refer (keywordize-keys)]
-            [taoensso.timbre :as timbre]
-            [oc.lib.slack :as slack]))
+            [taoensso.timbre :as timbre]))
 
 ;; ----- core.async -----
 

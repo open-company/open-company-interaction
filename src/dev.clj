@@ -31,7 +31,7 @@
   
   ([port]
   (init port)
-  (start⬆︎)
+  (start⬆)
   (bind-conn!)
   (app/echo-config port)
   (println (str "Now serving interactions from the REPL.\n"
