@@ -158,6 +158,7 @@
   "Start a core.async consumer to echo messages to Slack as the user."
   [db-pool]
   (reset! echo-go true)
+  (timbre/info "Starting echo...")
   (async/go (while @echo-go
     (timbre/debug "Slack echo waiting...")
     (let [message (<!! echo-chan)]
@@ -205,6 +206,7 @@
   "core.async consumer to proxy messages to Slack as the bot on behalf of the user."
   [db-pool]
   (reset! proxy-go true)
+  (timbre/info "Starting proxy...")
   (async/go (while @proxy-go
     (timbre/debug "Slack proxy waiting...")
     (let [message (<!! proxy-chan)]
@@ -246,10 +248,11 @@
   "core.async consumer to handle incoming Slack messages."
   [db-pool]
   (reset! incoming-go true)
+  (timbre/info "Starting incoming...")
   (async/go (while @incoming-go
     (timbre/debug "Slack incoming waiting...")
     (let [message (<!! incoming-chan)]
-      (timbre/debug "Processing message on incoming channel...")
+      (timbre/info "Processing message on incoming channel...")
       (if (:stop message)
         (do (reset! incoming-go false) (timbre/info "Slack incoming stopped."))
         (async/thread
@@ -266,6 +269,7 @@
   "core.async consumer to lookup Slack users using Slack API and our cache."
   []
   (reset! lookup-go true)
+  (timbre/info "Starting lookup...")
   (async/go (while @lookup-go
     (timbre/debug "Slack lookup waiting...")
     (let [message (<!! lookup-chan)]
@@ -296,6 +300,7 @@
   "core.async consumer to persist a Slack message as a comment."
   [db-pool]
   (reset! persist-go true)
+  (timbre/info "Starting persist...")
   (async/go (while @persist-go
     (timbre/debug "Slack persist waiting...")
     (let [message (<!! persist-chan)]

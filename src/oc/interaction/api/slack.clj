@@ -5,7 +5,11 @@
             [taoensso.timbre :as timbre]
             [oc.lib.slack :as lib-slack]
             [oc.interaction.config :as config]
-            [oc.interaction.async.slack-mirror :as mirror]))
+            [oc.interaction.async.slack-mirror :as mirror]
+            [oc.interaction.async.usage :as usage]))
+
+(defn- from-us? [text]
+  (and text (re-find (re-pattern (str "^" lib-slack/marker-char)) text)))
 
 (defn- slack-event
   "
@@ -36,9 +40,11 @@
   (let [body (:body request)
         type (get body "type")
         token (get body "token")
-        thread (get-in body ["event" "thread_ts"])]
+        event (get body "event")
+        channel (get event "channel")
+        thread (get event "thread_ts")]
 
-    ;; Token check    
+    ;; Token check
     (if-not (= token config/slack-verification-token)
       
       ;; Eghads! It might be a Slack impersonator!
@@ -47,19 +53,30 @@
         {:status 403})
 
       ;; Token check is A-OK
-      (cond 
+      (cond
         ;; This is a check of the web hook by Slack, echo back the challeng
-        (= type "url_verification") (do 
+        (= type "url_verification")
+        (do 
           (timbre/info "Slack challenge:" body) 
           {:status 200 :body (get body "challenge")}) ; Slack, we're good
         
+        ;; A message to the bot is to a DM channel that starts with D, e.g. "D6DV24ZHP"
+        (= \D (first channel))
+        (let [text (get event "text")]
+          (when-not (from-us? text)
+            ;; Message from Slack, not us, with a thread and w/o our marker, might need mirrored as a comment
+            (timbre/info "For the bot!")
+            (>!! usage/usage-chan {:body body})
+            (timbre/info "Went to the bot!") )
+          {:status 200})
+
         ;; If there's no thread, we aren't interested in the message
         (nil? thread) {:status 200}
 
         :else 
         ;; if there's a marker starting the message than this message came form us so can be ignored 
-        (let [text (get-in body ["event" "text"])]
-          (when-not (and text (re-find (re-pattern (str "^" lib-slack/marker-char)) text))
+        (let [text (get event "text")]
+          (when-not (from-us? text)
             ;; Message from Slack, not us, with a thread and w/o our marker, might need mirrored as a comment
             (>!! mirror/incoming-chan {:body body}))
           {:status 200})))))
