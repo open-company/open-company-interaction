@@ -9,7 +9,7 @@
   Comments are echoed to a Slack thread (defined by a Slack timestamp), the first comment for an resource
   initiates the Slack thread.
   "
-  (:require [clojure.core.async :as async :refer [<!! >!!]]
+  (:require [clojure.core.async :as async :refer [<! >!! >!]]
             [clojure.walk :refer (keywordize-keys)]
             [clojure.string :as s]
             [clojure.core.cache :as cache]
@@ -132,6 +132,8 @@
   "
   Look for an resource for the specified channel-id and thread. If one exists, create a new comment for
   the Slack message.
+
+  NB: Uses 'parked' core.async put `!>` so must be called from inside a go block
   "
   [db-pool channel-id thread body]
   (timbre/debug "Checking for slack thread:" thread "on channel:" channel-id)
@@ -140,7 +142,7 @@
                           "slack-thread-channel-id-thread" [[channel-id thread]]))]
       (timbre/debug "Found resource:" (:uuid resource) "for slack thread:" thread "on channel:" channel-id)
       ;; request to lookup the comment's author
-      (>!! lookup-chan {:resource resource :message body}))))
+      (>! lookup-chan {:resource resource :message body}))))
 
 (defn- persist-message-as-comment
   "Persist a new comment as a mirror of the incoming Slack message."
@@ -161,7 +163,7 @@
   (timbre/info "Starting echo...")
   (async/go (while @echo-go
     (timbre/debug "Slack echo waiting...")
-    (let [message (<!! echo-chan)]
+    (let [message (<! echo-chan)]
       (timbre/debug "Processing message on echo channel...")
       (if (:stop message)
         (do (reset! echo-go false) (timbre/info "Slack echo stopped."))
@@ -196,7 +198,7 @@
                     ;; Can't echo directly with this user, let's try proxying instead
                     (do
                       (timbre/info "Unable to echo comment:" uuid "to Slack:" result "trying to proxy instead")
-                      (>!! proxy-chan message))
+                      (>! proxy-chan message))
                     ;; No bot, so nothing we can do but error out the echo request
                     (timbre/error "Unable to echo comment:" uuid "to Slack:" result)))))
             (catch Exception e
@@ -209,7 +211,7 @@
   (timbre/info "Starting proxy...")
   (async/go (while @proxy-go
     (timbre/debug "Slack proxy waiting...")
-    (let [message (<!! proxy-chan)]
+    (let [message (<! proxy-chan)]
       (timbre/debug "Processing message on proxy channel...")
       (if (:stop message)
         (do (reset! proxy-go false) (timbre/info "Slack proxy stopped."))
@@ -251,7 +253,7 @@
   (timbre/info "Starting incoming...")
   (async/go (while @incoming-go
     (timbre/debug "Slack incoming waiting...")
-    (let [message (<!! incoming-chan)]
+    (let [message (<! incoming-chan)]
       (timbre/info "Processing message on incoming channel...")
       (if (:stop message)
         (do (reset! incoming-go false) (timbre/info "Slack incoming stopped."))
@@ -272,7 +274,7 @@
   (timbre/info "Starting lookup...")
   (async/go (while @lookup-go
     (timbre/debug "Slack lookup waiting...")
-    (let [message (<!! lookup-chan)]
+    (let [message (<! lookup-chan)]
       (timbre/debug "Processing message on lookup channel...")
       (if (:stop message)
         (do (reset! lookup-go false) (timbre/info "Slack lookup stopped."))
@@ -292,7 +294,7 @@
                   (timbre/debug "Caching Slack user:" slack-user-id "as:" author)
                   (reset! SlackUserCache (cache/miss @SlackUserCache slack-user-id author)))) ; update cache
 
-              (>!! persist-chan (assoc message :author (cache/lookup @SlackUserCache slack-user-id))))
+              (>! persist-chan (assoc message :author (cache/lookup @SlackUserCache slack-user-id))))
             (catch Exception e
               (timbre/error e)))))))))
 
@@ -303,7 +305,7 @@
   (timbre/info "Starting persist...")
   (async/go (while @persist-go
     (timbre/debug "Slack persist waiting...")
-    (let [message (<!! persist-chan)]
+    (let [message (<! persist-chan)]
       (timbre/debug "Processing message on persist channel...")
       (if (:stop message)
         (do (reset! persist-go false) (timbre/info "Slack persist stopped."))

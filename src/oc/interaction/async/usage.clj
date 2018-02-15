@@ -2,7 +2,7 @@
   "
   Send usage instructions to users DM'ing the bot. Required by Slack.
   "
-  (:require [clojure.core.async :as async :refer [<!! >!!]]
+  (:require [clojure.core.async :as async :refer [<! >!!]]
             [clojure.walk :refer (keywordize-keys)]
             [taoensso.timbre :as timbre]
             [oc.lib.slack :as slack]))
@@ -39,7 +39,7 @@
   (timbre/info "Starting usage reply...")
   (async/go (while @usage-go
     (timbre/debug "Slack usage reply waiting...")
-    (let [message (<!! usage-chan)]
+    (let [message (<! usage-chan)]
       (timbre/debug "Processing message on usage channel...")
       (if (:stop message)
         (do (reset! usage-go false) (timbre/info "Slack usage reply stopped."))

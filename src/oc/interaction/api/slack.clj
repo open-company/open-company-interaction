@@ -65,9 +65,7 @@
         (let [text (get event "text")]
           (when-not (from-us? text)
             ;; Message from Slack, not us, with a thread and w/o our marker, might need mirrored as a comment
-            (timbre/info "For the bot!")
-            (>!! usage/usage-chan {:body body})
-            (timbre/info "Went to the bot!") )
+            (>!! usage/usage-chan {:body body}))
           {:status 200})
 
         ;; If there's no thread, we aren't interested in the message
