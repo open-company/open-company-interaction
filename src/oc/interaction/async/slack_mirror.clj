@@ -130,10 +130,11 @@
 
 (defn- handle-message
   "
-  Look for an resource for the specified channel-id and thread. If one exists, create a new comment for
+  Look for a resource for the specified channel-id and thread. If one exists, create a new comment for
   the Slack message.
 
-  NB: Uses 'parked' core.async put `!>` so must be called from inside a go block
+  NB: Uses 'blocking' core.async put `>!!`, not `parked` core.async put `>!` because even though this
+  is called from inside a go block, it's also inside an `async/thread`.
   "
   [db-pool channel-id thread body]
   (timbre/debug "Checking for slack thread:" thread "on channel:" channel-id)
@@ -142,7 +143,7 @@
                           "slack-thread-channel-id-thread" [[channel-id thread]]))]
       (timbre/debug "Found resource:" (:uuid resource) "for slack thread:" thread "on channel:" channel-id)
       ;; request to lookup the comment's author
-      (>! lookup-chan {:resource resource :message body}))))
+      (>!! lookup-chan {:resource resource :message body}))))
 
 (defn- persist-message-as-comment
   "Persist a new comment as a mirror of the incoming Slack message."
@@ -157,7 +158,12 @@
 ;; ----- Event loops (outgoing to Slack) -----
 
 (defn- echo-loop 
-  "Start a core.async consumer to echo messages to Slack as the user."
+  "
+  Start a core.async consumer to echo messages to Slack as the user.
+
+  NB: Uses 'blocking' core.async put `>!!`, not `parked` core.async put `>!` because even though this
+  is called from inside a go block, it's also inside an `async/thread`.
+  "
   [db-pool]
   (reset! echo-go true)
   (timbre/info "Starting echo...")
@@ -198,7 +204,7 @@
                     ;; Can't echo directly with this user, let's try proxying instead
                     (do
                       (timbre/info "Unable to echo comment:" uuid "to Slack:" result "trying to proxy instead")
-                      (>! proxy-chan message))
+                      (>!! proxy-chan message))
                     ;; No bot, so nothing we can do but error out the echo request
                     (timbre/error "Unable to echo comment:" uuid "to Slack:" result)))))
             (catch Exception e
@@ -268,7 +274,12 @@
               (timbre/error e)))))))))
 
 (defn- lookup-loop 
-  "core.async consumer to lookup Slack users using Slack API and our cache."
+  "
+  core.async consumer to lookup Slack users using Slack API and our cache.
+
+  NB: Uses 'blocking' core.async put `>!!`, not `parked` core.async put `>!` because even though this
+  is called from inside a go block, it's also inside an `async/thread`.
+  "
   []
   (reset! lookup-go true)
   (timbre/info "Starting lookup...")
@@ -294,7 +305,7 @@
                   (timbre/debug "Caching Slack user:" slack-user-id "as:" author)
                   (reset! SlackUserCache (cache/miss @SlackUserCache slack-user-id author)))) ; update cache
 
-              (>! persist-chan (assoc message :author (cache/lookup @SlackUserCache slack-user-id))))
+              (>!! persist-chan (assoc message :author (cache/lookup @SlackUserCache slack-user-id))))
             (catch Exception e
               (timbre/error e)))))))))
 
