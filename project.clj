@@ -160,7 +160,8 @@
     ;; Disable some linters that are enabled by default:
     ;; contant-test - just seems mostly ill-advised, logical constants are useful in something like a `->cond` 
     ;; deprecations - the useful `either` from Prismatic schema is deprecated, we'll eventually switch to clojure.spec
-    :exclude-linters [:constant-test :deprecations]
+    ;; wrong-arity - Eastwood can't decipder the arity of some Amazonica SQS fns
+    :exclude-linters [:constant-test :deprecations :wrong-arity]
 
     ;; Enable some linters that are disabled by default
     :add-linters [:unused-namespaces :unused-private-vars] ; :unused-locals]

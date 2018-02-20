@@ -9,7 +9,6 @@
             [taoensso.timbre :as timbre]
             [amazonica.aws.sqs :as sqs]
             [schema.core :as schema]
-            [oc.lib.slack :as slack]
             [oc.lib.schema :as lib-schema]
             [oc.interaction.config :as config]))
 
