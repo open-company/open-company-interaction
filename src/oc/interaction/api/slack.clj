@@ -64,7 +64,7 @@
         (= \D (first channel))
         (let [text (get event "text")]
           (when-not (from-us? text)
-            ;; Message from Slack, not us, with a thread and w/o our marker, might need mirrored as a comment
+            ;; Message from Slack, w/o our marker, needs a bot usage request
             (>!! usage/usage-chan {:body body}))
           {:status 200})
 
