@@ -1,10 +1,46 @@
 (ns oc.interaction.async.usage
   "
-  Send usage instructions to users DM'ing the bot. Required by Slack.
+  Send a usage instructions request from a user to the bot.
+
+  Having the bot respond to DM's from a user with usage instructions is required by Slack.
   "
   (:require [clojure.core.async :as async :refer [<! >!!]]
             [clojure.walk :refer (keywordize-keys)]
-            [taoensso.timbre :as timbre]))
+            [taoensso.timbre :as timbre]
+            [amazonica.aws.sqs :as sqs]
+            [schema.core :as schema]
+            [oc.lib.slack :as slack]
+            [oc.lib.schema :as lib-schema]
+            [oc.interaction.config :as config]))
+
+;; ----- Schema -----
+
+(def UsageTrigger
+  {:type (schema/enum :usage)
+   :receiver {
+      :type (schema/enum :channel)
+      :slack-org-id lib-schema/NonBlankStr
+      :id schema/Str}})
+
+;; ----- Usage Request Trigger -----
+
+(defn- ->trigger [slack-org-id channel-id]
+  {:type :usage
+   :receiver {
+      :type :channel
+      :slack-org-id slack-org-id
+      :id channel-id}})
+
+(defn- send-trigger! [trigger]
+  (schema/validate UsageTrigger trigger) ; sanity check
+  (let [queue config/aws-sqs-bot-queue]
+    (timbre/info "Usage request to queue:" queue "for:" (-> trigger :receiver :id))
+    (sqs/send-message
+      {:access-key config/aws-access-key-id
+       :secret-key config/aws-secret-access-key}
+       config/aws-sqs-bot-queue
+       trigger)
+    (timbre/info "Request sent to:" queue "for:" (-> trigger :receiver :id))))
 
 ;; ----- core.async -----
 
@@ -14,21 +50,11 @@
 
 ;; ----- Event handling -----
 
-;; You talkin' to me? You talkin' to me??\n
-;; Well... you shouldn't be, I'm just a Carrot, I've got no ears!\n
-;; Ha! :laugh: I kid of course! But for the most part, I do like to stay deep in the soil, out of your way.\n
-;; > *Here's what I do:*\n
-;; - I can talk on behalf of your teammates to ensure their comments from Carrot make it into Slack
-;; - I can also talk on behalf of your teammates so the posts they share from Carrot make it to Slack
-;; - And, I can send you a daily or weekly digest of what's new from your team in Carrot
-;; [Carrot Digest Settings]
-
 (defn- handle-message
-  "
-  "
-  [channel-id body]
-  (timbre/info "Usage message from the bot!"))
-  
+  [slack-org-id channel-id]
+  (timbre/info "Sending usage request to the Bot service...")
+  (send-trigger! (->trigger slack-org-id channel-id)))
+
 ;; ----- Event loops (incoming from Slack) -----
 
 (defn- usage-loop 
@@ -43,12 +69,12 @@
       (if (:stop message)
         (do (reset! usage-go false) (timbre/info "Slack usage reply stopped."))
         (async/thread
-          (timbre/info "Bot time!")
           (try
             (let [body (keywordize-keys (:body message))
                   event (:event body)
+                  slack-org-id (:team_id body)
                   channel-id (:channel event)]
-              (handle-message channel-id body))
+              (handle-message slack-org-id channel-id))
             (catch Exception e
               (timbre/error e)))))))))
 
