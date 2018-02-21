@@ -25,24 +25,24 @@
     [clj-http "3.7.0"] ; HTTP client https://github.com/dakrone/clj-http
     [clj-soup/clojure-soup "0.1.3"] ; Clojure wrapper for jsoup HTML parser https://github.com/mfornos/clojure-soup
     
-    [open-company/lib "0.16.0"] ; Library for OC projects https://github.com/open-company/open-company-lib
-    ; In addition to common functions, brings in the following common dependencies used by this project:
-    ; httpkit - Web server http://http-kit.org/
-    ; core.async - Async programming and communication https://github.com/clojure/core.async
-    ; defun - Erlang-esque pattern matching for Clojure functions https://github.com/killme2008/defun
-    ; if-let - More than one binding for if/when macros https://github.com/LockedOn/if-let
-    ; Component - Component Lifecycle https://github.com/stuartsierra/component
-    ; Liberator - WebMachine (REST API server) port to Clojure https://github.com/clojure-liberator/liberator
-    ; RethinkDB - RethinkDB client for Clojure https://github.com/apa512/clj-rethinkdb
-    ; Schema - Data validation https://github.com/Prismatic/schema
-    ; Timbre - Pure Clojure/Script logging library https://github.com/ptaoussanis/timbre
-    ; Amazonica - A comprehensive Clojure client for the AWS API https://github.com/mcohen01/amazonica
-    ; Raven - Interface to Sentry error reporting https://github.com/sethtrain/raven-clj
-    ; Cheshire - JSON encoding / decoding https://github.com/dakrone/cheshire
-    ; clj-jwt - A Clojure library for JSON Web Token(JWT) https://github.com/liquidz/clj-jwt
-    ; clj-time - Date and time lib https://github.com/clj-time/clj-time
-    ; Environ - Get environment settings from different sources https://github.com/weavejester/environ
-    ; Sente - WebSocket server https://github.com/ptaoussanis/sente
+    [open-company/lib "0.16.1"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    ;; In addition to common functions, brings in the following common dependencies used by this project:
+    ;; httpkit - Web server http://http-kit.org/
+    ;; core.async - Async programming and communication https://github.com/clojure/core.async
+    ;; defun - Erlang-esque pattern matching for Clojure functions https://github.com/killme2008/defun
+    ;; if-let - More than one binding for if/when macros https://github.com/LockedOn/if-let
+    ;; Component - Component Lifecycle https://github.com/stuartsierra/component
+    ;; Liberator - WebMachine (REST API server) port to Clojure https://github.com/clojure-liberator/liberator
+    ;; RethinkDB - RethinkDB client for Clojure https://github.com/apa512/clj-rethinkdb
+    ;; Schema - Data validation https://github.com/Prismatic/schema
+    ;; Timbre - Pure Clojure/Script logging library https://github.com/ptaoussanis/timbre
+    ;; Amazonica - A comprehensive Clojure client for the AWS API https://github.com/mcohen01/amazonica
+    ;; Raven - Interface to Sentry error reporting https://github.com/sethtrain/raven-clj
+    ;; Cheshire - JSON encoding / decoding https://github.com/dakrone/cheshire
+    ;; clj-jwt - A Clojure library for JSON Web Token(JWT) https://github.com/liquidz/clj-jwt
+    ;; clj-time - Date and time lib https://github.com/clj-time/clj-time
+    ;; Environ - Get environment settings from different sources https://github.com/weavejester/environ
+    ;; Sente - WebSocket server https://github.com/ptaoussanis/sente
   ]
 
   ;; All profile plugins
@@ -160,7 +160,8 @@
     ;; Disable some linters that are enabled by default:
     ;; contant-test - just seems mostly ill-advised, logical constants are useful in something like a `->cond` 
     ;; deprecations - the useful `either` from Prismatic schema is deprecated, we'll eventually switch to clojure.spec
-    :exclude-linters [:constant-test :deprecations]
+    ;; wrong-arity - Eastwood can't decipder the arity of some Amazonica SQS fns
+    :exclude-linters [:constant-test :deprecations :wrong-arity]
 
     ;; Enable some linters that are disabled by default
     :add-linters [:unused-namespaces :unused-private-vars] ; :unused-locals]

@@ -9,7 +9,7 @@
   Comments are echoed to a Slack thread (defined by a Slack timestamp), the first comment for an resource
   initiates the Slack thread.
   "
-  (:require [clojure.core.async :as async :refer [<!! >!!]]
+  (:require [clojure.core.async :as async :refer [<! >!! >!]]
             [clojure.walk :refer (keywordize-keys)]
             [clojure.string :as s]
             [clojure.core.cache :as cache]
@@ -130,8 +130,11 @@
 
 (defn- handle-message
   "
-  Look for an resource for the specified channel-id and thread. If one exists, create a new comment for
+  Look for a resource for the specified channel-id and thread. If one exists, create a new comment for
   the Slack message.
+
+  NB: Uses 'blocking' core.async put `>!!`, not `parked` core.async put `>!` because even though this
+  is called from inside a go block, it's also inside an `async/thread`.
   "
   [db-pool channel-id thread body]
   (timbre/debug "Checking for slack thread:" thread "on channel:" channel-id)
@@ -155,12 +158,18 @@
 ;; ----- Event loops (outgoing to Slack) -----
 
 (defn- echo-loop 
-  "Start a core.async consumer to echo messages to Slack as the user."
+  "
+  Start a core.async consumer to echo messages to Slack as the user.
+
+  NB: Uses 'blocking' core.async put `>!!`, not `parked` core.async put `>!` because even though this
+  is called from inside a go block, it's also inside an `async/thread`.
+  "
   [db-pool]
   (reset! echo-go true)
+  (timbre/info "Starting echo...")
   (async/go (while @echo-go
     (timbre/debug "Slack echo waiting...")
-    (let [message (<!! echo-chan)]
+    (let [message (<! echo-chan)]
       (timbre/debug "Processing message on echo channel...")
       (if (:stop message)
         (do (reset! echo-go false) (timbre/info "Slack echo stopped."))
@@ -205,9 +214,10 @@
   "core.async consumer to proxy messages to Slack as the bot on behalf of the user."
   [db-pool]
   (reset! proxy-go true)
+  (timbre/info "Starting proxy...")
   (async/go (while @proxy-go
     (timbre/debug "Slack proxy waiting...")
-    (let [message (<!! proxy-chan)]
+    (let [message (<! proxy-chan)]
       (timbre/debug "Processing message on proxy channel...")
       (if (:stop message)
         (do (reset! proxy-go false) (timbre/info "Slack proxy stopped."))
@@ -246,10 +256,11 @@
   "core.async consumer to handle incoming Slack messages."
   [db-pool]
   (reset! incoming-go true)
+  (timbre/info "Starting incoming...")
   (async/go (while @incoming-go
     (timbre/debug "Slack incoming waiting...")
-    (let [message (<!! incoming-chan)]
-      (timbre/debug "Processing message on incoming channel...")
+    (let [message (<! incoming-chan)]
+      (timbre/info "Processing message on incoming channel...")
       (if (:stop message)
         (do (reset! incoming-go false) (timbre/info "Slack incoming stopped."))
         (async/thread
@@ -263,12 +274,18 @@
               (timbre/error e)))))))))
 
 (defn- lookup-loop 
-  "core.async consumer to lookup Slack users using Slack API and our cache."
+  "
+  core.async consumer to lookup Slack users using Slack API and our cache.
+
+  NB: Uses 'blocking' core.async put `>!!`, not `parked` core.async put `>!` because even though this
+  is called from inside a go block, it's also inside an `async/thread`.
+  "
   []
   (reset! lookup-go true)
+  (timbre/info "Starting lookup...")
   (async/go (while @lookup-go
     (timbre/debug "Slack lookup waiting...")
-    (let [message (<!! lookup-chan)]
+    (let [message (<! lookup-chan)]
       (timbre/debug "Processing message on lookup channel...")
       (if (:stop message)
         (do (reset! lookup-go false) (timbre/info "Slack lookup stopped."))
@@ -296,9 +313,10 @@
   "core.async consumer to persist a Slack message as a comment."
   [db-pool]
   (reset! persist-go true)
+  (timbre/info "Starting persist...")
   (async/go (while @persist-go
     (timbre/debug "Slack persist waiting...")
-    (let [message (<!! persist-chan)]
+    (let [message (<! persist-chan)]
       (timbre/debug "Processing message on persist channel...")
       (if (:stop message)
         (do (reset! persist-go false) (timbre/info "Slack persist stopped."))
