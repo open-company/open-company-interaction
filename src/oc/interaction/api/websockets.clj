@@ -70,25 +70,42 @@
   :auth/jwt
   
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
-  (let [board-uuid (-> ring-req :params :board-uuid)
-        client-id (-> ring-req :params :client-id)
+  (let [client-id (-> ring-req :params :client-id)
         jwt-valid? (jwt/valid? (:jwt ?data) c/passphrase)]
-    (timbre/info "[websocket] auth/jwt" (if jwt-valid? "valid" "invalid") "for board:" board-uuid "by" client-id)
-    (when jwt-valid?
-      (>!! watcher/watcher-chan {:watch true :watch-id board-uuid :client-id client-id}))
+    (timbre/info "[websocket] auth/jwt" (if jwt-valid? "valid" "invalid") " by" client-id)
     ;; Get the jwt and disconnect the client if it's not good!
     (when ?reply-fn
       (?reply-fn {:valid jwt-valid?}))))
+
+(defmethod -event-msg-handler
+  :watch/board
+
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+  (let [client-id (-> ring-req :params :client-id)
+        board-uuid (:board-uuid ?data)]
+    (timbre/info "[websocket] watch/board by " client-id)
+    (>!! watcher/watcher-chan {:watch true :watch-id board-uuid :client-id client-id})
+    (when ?reply-fn
+      (?reply-fn {:watching board-uuid}))))
+
+(defmethod -event-msg-handler
+  :unwatch/board
+
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+  (let [client-id (-> ring-req :params :client-id)]
+    (timbre/info "[websocket] unwatch/board by " client-id)
+    (>!! watcher/watcher-chan {:unwatch true :client-id client-id})
+    (when ?reply-fn
+      (?reply-fn {:unwatching client-id}))))
 
 (defmethod -event-msg-handler
   ;; Client disconnected
   :chsk/uidport-close
   
   [{:as ev-msg :keys [event id ring-req]}]
-  (let [board-uuid (-> ring-req :params :board-uuid)
-        client-id (-> ring-req :params :client-id)]
-    (timbre/info "[websocket] chsk/uidport-close for board:" board-uuid "by" client-id)
-    (>!! watcher/watcher-chan {:unwatch true :watch-id board-uuid :client-id client-id})))
+  (let [client-id (-> ring-req :params :client-id)]
+    (timbre/info "[websocket] chsk/uidport-close by:" client-id)
+    (>!! watcher/watcher-chan {:unwatch true :client-id client-id})))
 
 ;; ----- Sente router event loop (incoming from Sente/WebSocket) -----
 
@@ -127,8 +144,8 @@
 
 (defn routes [sys]
   (compojure/routes
-    (GET "/interaction-socket/boards/:board-uuid" req (ring-ajax-get-or-ws-handshake req))
-    (POST "/interaction-socket/boards/:board-uuid" req (ring-ajax-post req))))
+    (GET "/interaction-socket/user/:user-id" req (ring-ajax-get-or-ws-handshake req))
+    (POST "/interaction-socket/user/:user-id" req (ring-ajax-post req))))
 
 ;; ----- Component start/stop -----
 
