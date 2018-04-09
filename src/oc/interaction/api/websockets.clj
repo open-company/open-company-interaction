@@ -72,7 +72,7 @@
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [client-id (-> ring-req :params :client-id)
         jwt-valid? (jwt/valid? (:jwt ?data) c/passphrase)]
-    (timbre/info "[websocket] auth/jwt" (if jwt-valid? "valid" "invalid") " by" client-id)
+    (timbre/info "[websocket] auth/jwt" (if jwt-valid? "valid" "invalid") "by" client-id)
     ;; Get the jwt and disconnect the client if it's not good!
     (when ?reply-fn
       (?reply-fn {:valid jwt-valid?}))))
@@ -83,7 +83,7 @@
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [client-id (-> ring-req :params :client-id)
         board-uuid (:board-uuid ?data)]
-    (timbre/info "[websocket] watch/board by " client-id)
+    (timbre/info "[websocket] watch/board" board-uuid "by" client-id)
     (>!! watcher/watcher-chan {:watch true :watch-id board-uuid :client-id client-id})
     (when ?reply-fn
       (?reply-fn {:watching board-uuid}))))
@@ -93,7 +93,7 @@
 
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [client-id (-> ring-req :params :client-id)]
-    (timbre/info "[websocket] unwatch/board by " client-id)
+    (timbre/info "[websocket] unwatch/board by" client-id)
     (>!! watcher/watcher-chan {:unwatch true :client-id client-id})
     (when ?reply-fn
       (?reply-fn {:unwatching client-id}))))
@@ -104,7 +104,7 @@
   
   [{:as ev-msg :keys [event id ring-req]}]
   (let [client-id (-> ring-req :params :client-id)]
-    (timbre/info "[websocket] chsk/uidport-close by:" client-id)
+    (timbre/info "[websocket] chsk/uidport-close by" client-id)
     (>!! watcher/watcher-chan {:unwatch true :client-id client-id})))
 
 ;; ----- Sente router event loop (incoming from Sente/WebSocket) -----
