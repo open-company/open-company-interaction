@@ -4,7 +4,8 @@
             [oc.lib.db.pool :as pool]
             [oc.interaction.config :as c]
             [oc.interaction.app :as app]
-            [oc.interaction.components :as components]))
+            [oc.interaction.components :as components]
+            [oc.interaction.async.slack-router :as slack-router]))
 
 (defonce system nil)
 (defonce conn nil)
@@ -12,8 +13,15 @@
 (defn init
   ([] (init c/interaction-server-port))
   ([port]
-  (alter-var-root #'system (constantly (components/interaction-system {:handler-fn app/app
-                                                                       :port port})))))
+   (alter-var-root #'system (constantly
+                             (components/interaction-system
+                              {:handler-fn app/app
+                               :port port
+                               :sqs-queue c/aws-sqs-slack-router-queue
+                               :slack-sqs-msg-handler slack-router/sqs-handler
+                               :sqs-creds {:access-key c/aws-access-key-id
+                                           :secret-key c/aws-secret-access-key}
+                               })))))
 
 (defn bind-conn! []
   (alter-var-root #'conn (constantly (pool/claim (get-in system [:db-pool :pool])))))
