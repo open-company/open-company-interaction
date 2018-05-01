@@ -216,6 +216,8 @@ A Slack webhook is used to mirror Slack replies to OpenCompany comments back int
 
 To use the webhook from Slack with local development, you need to run the [Slack Router service](https://github.com/open-company/open-company-slack-router).
 
+You will then need to subscribe the SQS queue to the correct SNS topic.
+See the Slack Router service README.
 
 ## Technical Design
 
