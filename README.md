@@ -34,7 +34,6 @@ Most of the dependencies are internal, meaning [Leiningen](https://github.com/te
 * [Java 8](http://www.oracle.com/technetwork/java/javase/downloads/index.html) - a Java 8 JRE is needed to run Clojure
 * [Leiningen](https://github.com/technomancy/leiningen) 2.7.1+ - Clojure's build and dependency management tool
 * [RethinkDB](http://rethinkdb.com/) v2.3.6+ - a multi-modal (document, key/value, relational) open source NoSQL database
-* [ngrok](https://ngrok.com/) - Secure web tunnel to localhost
 
 #### Java
 
@@ -159,19 +158,6 @@ If you run Linux on your development environment (good for you, hardcore!) you c
 
 RethinkDB [isn't supported on Windows](https://github.com/rethinkdb/rethinkdb/issues/1100) directly. If you are stuck on Windows, you can run Linux in a virtualized environment to host RethinkDB.
 
-#### ngrok
-
-ngrok allows you to setup a secure web tunnel for HTTP/S requests to your localhost. You'll need this
-to utilize the Slack webhook during local development so Slack can communicate with your local development
-environment.
-
-ngrok is trivial to setup:
-
-1. [Download](https://ngrok.com/download) the version for your operating system.
-1. Unzip the download and put ngrok someplace handy for you (in your path is good!)
-1. Verify you can run ngrok with: `ngrok help`
-
-
 ## Usage
 
 Run the interaction service with: `lein start`
@@ -228,31 +214,7 @@ Then enter these commands one-by-one, noting the output:
 
 A Slack webhook is used to mirror Slack replies to OpenCompany comments back into OpenCompany.
 
-To use the webhook from Slack with local development, you need to run ngrok, then configure your Slack integration.
-
-First start the Interaction Service (see above), and start the ngrok tunnel:
-
-```console
-ngrok http 3002
-```
-
-Note the URL ngrok provides. It will look like: `http://6ae20d9b.ngrok.io` -> localhost:3002
-
-To configure the Slack to use the ngrok tunnel as the destination of message.channel events. Go to
-[Your Apps](https://api.slack.com/apps) and click the "Carrot (Local Development)" app.
-
-Click the "Event Subscriptions" navigation in the menu. Click the toggle on.
-
-Add the URL provided by ngrok above, modifying `http` to `https` and with a `/slack-event` suffix,
-e.g. `https://6ae20d9b.ngrok.io/slack-event`
-
- Click the "Add Team Event" button and add the `message.channel` event. Click the "Add Bot User Event" button and
- add the `message.channel` event.
-
-Click the "Save Changes" button.
-
-NB: Make sure when you are done testing locally, you disable the "Enable Events" toggle so Slack will stop trying
-to echo events to your local environment via ngrok.
+To use the webhook from Slack with local development, you need to run the [Slack Router service](https://github.com/open-company/open-company-slack-router).
 
 
 ## Technical Design
