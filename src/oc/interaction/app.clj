@@ -8,7 +8,6 @@
     [taoensso.timbre :as timbre]
     [ring.logger.timbre :refer (wrap-with-logger)]
     [liberator.dev :refer (wrap-trace)]
-    [ring.middleware.json :refer (wrap-json-body)]
     [ring.middleware.keyword-params :refer (wrap-keyword-params)]
     [ring.middleware.params :refer (wrap-params)]
     [ring.middleware.reload :refer (wrap-reload)]
@@ -21,7 +20,7 @@
     [oc.interaction.api.comments :as comments-api]
     [oc.interaction.api.reactions :as reactions-api]
     [oc.interaction.api.websockets :as websockets-api]
-    [oc.interaction.api.slack :as slack-api]))
+    [oc.interaction.async.slack-router :as slack-router]))
 
 ;; ----- Unhandled Exceptions -----
 
@@ -45,8 +44,7 @@
     (GET "/---500-test---" [] {:body "Testing bad things." :status 500})
     (comments-api/routes sys)
     (reactions-api/routes sys)
-    (websockets-api/routes sys)
-    (wrap-json-body (slack-api/routes sys))))
+    (websockets-api/routes sys)))
 
 ;; ----- System Startup -----
 
@@ -83,7 +81,13 @@
     (timbre/merge-config! {:level (keyword c/log-level)}))
 
   ;; Start the system
-  (-> {:handler-fn app :port port}
+  (-> {:handler-fn app
+       :port port
+       :sqs-queue c/aws-sqs-slack-router-queue
+       :slack-sqs-msg-handler slack-router/sqs-handler
+       :sqs-creds {:access-key c/aws-access-key-id
+                   :secret-key c/aws-secret-access-key}
+       }
     components/interaction-system
     component/start)
 

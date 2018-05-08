@@ -58,6 +58,7 @@
 (defonce aws-secret-access-key (env :aws-secret-access-key))
 
 (defonce aws-sqs-bot-queue (env :aws-sqs-bot-queue))
+(defonce aws-sqs-slack-router-queue (env :aws-sqs-slack-router-queue))
 
 ;; ----- JWT -----
 

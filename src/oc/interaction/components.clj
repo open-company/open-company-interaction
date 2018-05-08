@@ -4,10 +4,12 @@
             [org.httpkit.server :as httpkit]
             [oc.lib.db.pool :as pool]
             [oc.lib.async.watcher :as watcher]
+            [oc.lib.sqs :as sqs]
             [oc.interaction.config :as c]
             [oc.interaction.api.websockets :as websockets-api]
             [oc.interaction.async.slack-mirror :as slack-mirror]
-            [oc.interaction.async.usage :as usage]))
+            [oc.interaction.async.usage :as usage]
+            [oc.interaction.async.slack-router :as slack-router]))
 
 (defrecord HttpKit [options handler]
   component/Lifecycle
@@ -83,6 +85,24 @@
         (dissoc component :usage-reply))
       component)))
 
+(defrecord SlackRouter [slack-router-fn]
+  component/Lifecycle
+
+  (start [component]
+    (timbre/info "[slack-router] starting...")
+    (slack-router/start)
+    (timbre/info "[slack-router] started")
+    (assoc component :slack-router true))
+
+  (stop [{:keys [slack-router] :as component}]
+    (if slack-router
+      (do
+        (timbre/info "[slack-router] stopping...")
+        (slack-router/stop)
+        (timbre/info "[slack-router] stopped")
+        (dissoc component :slack-router))
+      component)))
+
 (defrecord Handler [handler-fn]
   component/Lifecycle
 
@@ -98,9 +118,13 @@
     (timbre/info "[handler] stopped")
     (dissoc component :handler)))
 
-(defn interaction-system [{:keys [port handler-fn] :as opts}]
+(defn interaction-system [{:keys [port handler-fn sqs-creds sqs-queue slack-sqs-msg-handler] :as opts}]
   (component/system-map
     :db-pool (map->RethinkPool {:size c/db-pool-size :regenerate-interval 5})
+    :slack-router (component/using
+                   (map->SlackRouter {:slack-router-fn slack-sqs-msg-handler})
+                   [])
+    :sqs (sqs/sqs-listener sqs-creds sqs-queue slack-sqs-msg-handler)
     :usage-reply (component/using
                     (map->UsageReply {})
                     [])
