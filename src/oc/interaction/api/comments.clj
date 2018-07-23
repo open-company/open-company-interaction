@@ -9,6 +9,7 @@
             [oc.lib.schema :as lib-schema]
             [oc.interaction.config :as config]
             [oc.interaction.api.common :as common]
+            [oc.interaction.async.notification :as notification]
             [oc.interaction.async.watcher :as watcher]
             [oc.interaction.representations.interaction :as interact-rep]
             [oc.interaction.resources.interaction :as interact-res]))
@@ -55,10 +56,14 @@
 
 (defn- update-comment [conn ctx comment-uuid]
   (timbre/info "Updating comment:" comment-uuid)
-  (if-let* [updated-comment (:updated-comment ctx)
+  (if-let* [existing-comment (:existing-comment ctx)
+            updated-comment (:updated-comment ctx)
             _updated-result (interact-res/update-interaction! conn (:uuid updated-comment) updated-comment)]
     (do 
       (timbre/info "Updated comment:" comment-uuid)
+      (notification/send-trigger! (notification/->trigger :update updated-comment
+                                                          {:new updated-comment
+                                                           :old existing-comment} (:user ctx)))
       (watcher/notify-watcher :interaction-comment/update updated-comment)
       {:updated-comment updated-comment})
 
@@ -70,6 +75,8 @@
             _delete-result (interact-res/delete-interaction! conn comment-uuid)]
     (do 
       (timbre/info "Deleted comment:" comment-uuid)
+      (notification/send-trigger! (notification/->trigger :delete existing-comment
+                                                          {:old existing-comment} (:user ctx)))
       (watcher/notify-watcher :interaction-comment/delete existing-comment)
       true)
     (do (timbre/info "Failed deleting comment:" comment-uuid) false)))
@@ -157,7 +164,10 @@
                         false))
 
   ;; Actions
-  :post! (fn [ctx] (common/create-interaction conn ctx))
+  :post! (fn [ctx] (let [result (common/create-interaction conn ctx)
+                         new-comment (:created-interaction result)]
+                      (notification/send-trigger! (notification/->trigger :add new-comment
+                                                        {:new new-comment} (:user ctx)))))
 
   ;; Responses
   :handle-ok (fn [ctx] (interact-rep/render-interaction-list org-uuid board-uuid resource-uuid

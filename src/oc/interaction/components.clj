@@ -5,6 +5,7 @@
             [oc.lib.db.pool :as pool]
             [oc.lib.async.watcher :as watcher]
             [oc.lib.sqs :as sqs]
+            [oc.interaction.async.notification :as notification]
             [oc.interaction.config :as c]
             [oc.interaction.api.websockets :as websockets-api]
             [oc.interaction.async.slack-mirror :as slack-mirror]
@@ -103,6 +104,24 @@
         (dissoc component :slack-router))
       component)))
 
+(defrecord AsyncConsumers []
+  component/Lifecycle
+
+  (start [component]
+    (timbre/info "[async-consumers] starting")
+    (notification/start) ; core.async channel consumer for notification events
+    (timbre/info "[async-consumers] started")
+    (assoc component :async-consumers true))
+
+  (stop [{:keys [async-consumers] :as component}]
+    (if async-consumers
+      (do
+        (timbre/info "[async-consumers] stopping")
+        (notification/stop) ; core.async channel consumer for notification events
+        (timbre/info "[async-consumers] stopped")
+        (dissoc component :async-consumers))
+    component)))
+
 (defrecord Handler [handler-fn]
   component/Lifecycle
 
@@ -121,6 +140,9 @@
 (defn interaction-system [{:keys [port handler-fn sqs-creds sqs-queue slack-sqs-msg-handler] :as opts}]
   (component/system-map
     :db-pool (map->RethinkPool {:size c/db-pool-size :regenerate-interval 5})
+    :async-consumers (component/using
+                        (map->AsyncConsumers {})
+                        [])
     :slack-router (component/using
                    (map->SlackRouter {:slack-router-fn slack-sqs-msg-handler})
                    [])

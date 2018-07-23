@@ -7,6 +7,7 @@
             [oc.lib.api.common :as api-common]
             [oc.interaction.config :as config]
             [oc.interaction.api.common :as common]
+            [oc.interaction.async.notification :as notification]
             [oc.interaction.async.watcher :as watcher]
             [oc.interaction.representations.interaction :as interact-rep]
             [oc.interaction.resources.interaction :as interact-res]))
@@ -23,8 +24,23 @@
                          :board-uuid board-uuid
                          :resource-uuid resource-uuid
                          :reaction reaction-unicode}
-        author (:user ctx)]
-    (common/create-interaction conn {:new-interaction (interact-res/->reaction interaction-map author)} reaction-count)))
+        author (:user ctx)
+        result (common/create-interaction conn {:new-interaction (interact-res/->reaction interaction-map author)}
+                                                reaction-count)
+        new-reaction (:created-interaction result)]
+    (notification/send-trigger! (notification/->trigger :add new-reaction
+                                                        {:new new-reaction} (:user ctx)))
+    result))
+
+(defn- delete-reaction [conn ctx]
+  (let [existing-reaction (:existing-reaction ctx)]
+    (when existing-reaction
+      (interact-res/delete-interaction! conn (:uuid existing-reaction))
+      (notification/send-trigger! (notification/->trigger :delete existing-reaction
+                                                          {:old existing-reaction} (:user ctx)))
+      (watcher/notify-watcher :interaction-reaction/delete
+                              existing-reaction
+                              (-> ctx :existing-reactions count dec)))))
 
 ;; ----- Responses -----
 
@@ -73,12 +89,7 @@
                                           resource-uuid
                                           reaction-unicode
                                           (-> ctx :existing-reactions count inc))))
-  :delete! (fn [ctx] (let [existing-reaction (:existing-reaction ctx)]
-                        (when existing-reaction
-                          (interact-res/delete-interaction! conn (:uuid existing-reaction))
-                          (watcher/notify-watcher :interaction-reaction/delete
-                                                  existing-reaction
-                                                  (-> ctx :existing-reactions count dec)))))
+  :delete! (fn [ctx] (delete-reaction conn ctx))
 
   ;; Responses
   :respond-with-entity? true

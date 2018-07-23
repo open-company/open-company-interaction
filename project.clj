@@ -13,19 +13,19 @@
 
   ;; All profile dependencies
   :dependencies [
-    [org.clojure/clojure "1.9.0"] ; Lisp on the JVM http://clojure.org/documentation
+    [org.clojure/clojure "1.10.0-alpha6"] ; Lisp on the JVM http://clojure.org/documentation
     [org.clojure/core.cache "0.7.1"] ; Clojure in-memory caching https://github.com/clojure/core.cache
-    [org.clojure/tools.cli "0.3.5"] ; Command-line parsing https://github.com/clojure/tools.cli
-    [ring/ring-devel "1.6.3"] ; Web application library https://github.com/ring-clojure/ring
-    [ring/ring-core "1.6.3"] ; Web application library https://github.com/ring-clojure/ring
+    [org.clojure/tools.cli "0.3.7"] ; Command-line parsing https://github.com/clojure/tools.cli
+    [ring/ring-devel "1.7.0-RC1"] ; Web application library https://github.com/ring-clojure/ring
+    [ring/ring-core "1.7.0-RC1"] ; Web application library https://github.com/ring-clojure/ring
     [ring/ring-json "0.5.0-beta1"] ; JSON request/response https://github.com/ring-clojure/ring-json
     [jumblerg/ring.middleware.cors "1.0.1"] ; CORS library https://github.com/jumblerg/ring.middleware.cors
     [ring-logger-timbre "0.7.6" :exclusions [com.taoensso/encore]] ; Ring logging https://github.com/nberger/ring-logger-timbre
-    [compojure "1.6.0"] ; Web routing https://github.com/weavejester/compojure
-    [clj-http "3.8.0"] ; HTTP client https://github.com/dakrone/clj-http
+    [compojure "1.6.1"] ; Web routing https://github.com/weavejester/compojure
+    [clj-http "3.9.0"] ; HTTP client https://github.com/dakrone/clj-http
     [clj-soup/clojure-soup "0.1.3"] ; Clojure wrapper for jsoup HTML parser https://github.com/mfornos/clojure-soup
     
-    [open-company/lib "0.16.3"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    [open-company/lib "0.16.10"] ; Library for OC projects https://github.com/open-company/open-company-lib
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
@@ -62,12 +62,12 @@
         :open-company-auth-passphrase "this_is_a_qa_secret" ; JWT secret
       }
       :dependencies [
-        [midje "1.9.2-alpha3"] ; Example-based testing https://github.com/marick/Midje
+        [midje "1.9.2"] ; Example-based testing https://github.com/marick/Midje
         [ring-mock "0.1.5"] ; Test Ring requests https://github.com/weavejester/ring-mock
       ]
       :plugins [
         [lein-midje "3.2.1"] ; Example-based testing https://github.com/marick/lein-midje
-        [jonase/eastwood "0.2.6-beta2"] ; Linter https://github.com/jonase/eastwood
+        [jonase/eastwood "0.2.8"] ; Linter https://github.com/jonase/eastwood
         [lein-kibit "0.1.6"] ; Static code search for non-idiomatic code https://github.com/jonase/kibit
       ]
     }
@@ -82,7 +82,8 @@
         :aws-access-key-id "CHANGE-ME"
         :aws-secret-access-key "CHANGE-ME"
         :aws-sqs-bot-queue "CHANGE-ME"
-        :aws-sqs-email-queue "CHANGE-ME"
+        :aws-sqs-slack-router-queue "CHANGE-ME"
+        :aws-sns-interaction-topic-arn "" ; SNS topic to publish notifications (optional)        
         :log-level "debug"
       }
       :plugins [

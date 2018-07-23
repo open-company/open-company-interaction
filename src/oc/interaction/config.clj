@@ -52,13 +52,15 @@
 (defonce ui-server-url (or (env :ui-server-url) "http://localhost:3559"))
 (defonce web-cdn-url (or (env :web-cdn-url) "https://do64qbk3yqbc.cloudfront.net"))
 
-;; ----- AWS SQS -----
+;; ----- AWS SQS / SNS -----
 
 (defonce aws-access-key-id (env :aws-access-key-id))
 (defonce aws-secret-access-key (env :aws-secret-access-key))
 
 (defonce aws-sqs-bot-queue (env :aws-sqs-bot-queue))
 (defonce aws-sqs-slack-router-queue (env :aws-sqs-slack-router-queue))
+
+(defonce aws-sns-interaction-topic-arn (env :aws-sns-interaction-topic-arn))
 
 ;; ----- JWT -----
 

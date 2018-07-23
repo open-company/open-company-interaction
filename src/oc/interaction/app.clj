@@ -53,8 +53,12 @@
     "Running on port: " port "\n"
     "Database: " c/db-name "\n"
     "Database pool: " c/db-pool-size "\n"
+    "AWS SQS Bot Queue: " c/aws-sqs-bot-queue "\n"
+    "AWS SQS Slack Queue: " c/aws-sqs-slack-router-queue "\n"
+    "AWS SNS notification topic ARN: " c/aws-sns-interaction-topic-arn "\n"
     "Hot-reload: " c/hot-reload "\n"
     "Trace: " c/liberator-trace "\n"
+    "Log level: " c/log-level "\n"
     "Sentry: " c/dsn "\n\n"
     (when c/intro? "Ready to serve...\n"))))
 
