@@ -158,6 +158,37 @@ If you run Linux on your development environment (good for you, hardcore!) you c
 
 RethinkDB [isn't supported on Windows](https://github.com/rethinkdb/rethinkdb/issues/1100) directly. If you are stuck on Windows, you can run Linux in a virtualized environment to host RethinkDB.
 
+#### Required Secrets
+
+A secret is shared between the Interaction service and the [Authentication service](https://github.com/open-company/open-company-auth) for creating and validating [JSON Web Tokens](https://jwt.io/).
+
+An [AWS SQS queue](https://aws.amazon.com/sqs/) is used to pass messages to the Interaction service from Slack. Setup an SQS Queue and key/secret access to the queue using the AWS Web Console or API.
+
+You will also need to subscribe the SQS queue to the [Slack Router service](https://github.com/open-company/open-company-slack-router) SNS topic. To do this you will need to go to the AWS console and follow these instruction:
+
+Go to the AWS SQS Console and select the SQS queue configured above. From the 'Queue Actions' dropdown, select 'Subscribe Queue to SNS Topic'. Select the SNS topic you've configured your Slack Router service instance to publish to, and click the 'Subscribe' button.
+
+Make sure you update the `CHANGE-ME` items in the section of the `project.clj` that looks like this to contain your actual JWT, and AWS secrets:
+
+```clojure
+    ;; Dev environment and dependencies
+    :dev [:qa {
+      :env ^:replace {
+        :db-name "open_company_storage_dev"
+        :liberator-trace "true" ; liberator debug data in HTTP response headers
+        :hot-reload "true" ; reload code when changed on the file system
+        :open-company-auth-passphrase "this_is_a_dev_secret" ; JWT secret
+        :aws-access-key-id "CHANGE-ME"
+        :aws-secret-access-key "CHANGE-ME"
+        :aws-sqs-bot-queue "CHANGE-ME"
+        :aws-sqs-slack-router-queue "CHANGE-ME"
+        :aws-sns-interaction-topic-arn "" ; SNS topic to publish notifications (optional)        
+        :log-level "debug"
+      }
+```
+
+An optional [AWS SNS](https://aws.amazon.com/sns/) pub/sub topic is used to push notifications of interaction changes to interested listeners. If you want to take advantage of this capability, configure the `aws-sns-interaction-topic-arn` with the ARN (Amazon Resource Name) of the SNS topic you setup in AWS.
+
 ## Usage
 
 Run the interaction service with: `lein start`
@@ -227,6 +258,7 @@ The interaction service is composed of 4 main responsibilities:
 - WebSocket notifications of comment and reaction CRUD to listening clients
 - Pushing new comments to Slack
 - Receiving new comments from Slack
+- Publishing comment and reaction change notifications to interested subscribers via SNS
 
 ![Interaction Service Diagram](https://cdn.rawgit.com/open-company/open-company-interaction/mainline/docs/Interaction-Service.svg)
 
