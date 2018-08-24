@@ -61,7 +61,8 @@
             _updated-result (interact-res/update-interaction! conn (:uuid updated-comment) updated-comment)]
     (do 
       (timbre/info "Updated comment:" comment-uuid)
-      (notification/send-trigger! (notification/->trigger :update updated-comment
+      (notification/send-trigger! (notification/->trigger conn
+                                                          :update updated-comment
                                                           {:new updated-comment
                                                            :old existing-comment} (:user ctx)))
       (watcher/notify-watcher :interaction-comment/update updated-comment)
@@ -75,7 +76,7 @@
             _delete-result (interact-res/delete-interaction! conn comment-uuid)]
     (do 
       (timbre/info "Deleted comment:" comment-uuid)
-      (notification/send-trigger! (notification/->trigger :delete existing-comment
+      (notification/send-trigger! (notification/->trigger conn :delete existing-comment
                                                           {:old existing-comment} (:user ctx)))
       (watcher/notify-watcher :interaction-comment/delete existing-comment)
       true)
@@ -166,7 +167,7 @@
   ;; Actions
   :post! (fn [ctx] (let [result (common/create-interaction conn ctx)
                          new-comment (:created-interaction result)]
-                      (notification/send-trigger! (notification/->trigger :add new-comment
+                      (notification/send-trigger! (notification/->trigger conn :add new-comment
                                                         {:new new-comment} (:user ctx)))))
 
   ;; Responses
