@@ -119,6 +119,7 @@
     (do
       (timbre/debug "Triggering a notification for:" (or (-> trigger :content :old :uuid)
                                                          (-> trigger :content :new :uuid)))
+      (timbre/trace "Sending trigger:" trigger)
       (>!! notification-chan trigger))))
 
 ;; ----- Component start/stop -----
