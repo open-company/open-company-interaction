@@ -16,8 +16,8 @@
     [org.clojure/clojure "1.10.0-alpha6"] ; Lisp on the JVM http://clojure.org/documentation
     [org.clojure/core.cache "0.7.1"] ; Clojure in-memory caching https://github.com/clojure/core.cache
     [org.clojure/tools.cli "0.3.7"] ; Command-line parsing https://github.com/clojure/tools.cli
-    [ring/ring-devel "1.7.0-RC1"] ; Web application library https://github.com/ring-clojure/ring
-    [ring/ring-core "1.7.0-RC1"] ; Web application library https://github.com/ring-clojure/ring
+    [ring/ring-devel "1.7.0-RC2"] ; Web application library https://github.com/ring-clojure/ring
+    [ring/ring-core "1.7.0-RC2"] ; Web application library https://github.com/ring-clojure/ring
     [ring/ring-json "0.5.0-beta1"] ; JSON request/response https://github.com/ring-clojure/ring-json
     [jumblerg/ring.middleware.cors "1.0.1"] ; CORS library https://github.com/jumblerg/ring.middleware.cors
     [ring-logger-timbre "0.7.6" :exclusions [com.taoensso/encore]] ; Ring logging https://github.com/nberger/ring-logger-timbre

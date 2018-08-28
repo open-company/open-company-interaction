@@ -51,6 +51,7 @@
    :resource-type (schema/pred resource-type?)
    :uuid lib-schema/UniqueID
    :org-uuid lib-schema/UniqueID
+   :org {schema/Any schema/Any}
    :board-uuid lib-schema/UniqueID
    :content {
     (schema/optional-key :new) (schema/conditional #(= (resource-type %) :comment) interact-res/Comment
@@ -101,11 +102,14 @@
 
 (defn ->trigger [conn notification-type interaction content user]
   (let [resource-uuid (or (-> content :new :resource-uuid) (-> content :old :resource-uuid))
-        entry (db-common/read-resource conn "entries" resource-uuid)]
+        entry (db-common/read-resource conn "entries" resource-uuid)
+        org-uuid (:org-uuid interaction)
+        org (first (db-common/read-resources conn "orgs" "uuid" org-uuid))]
     {:notification-type notification-type
      :resource-type (resource-type interaction)
      :uuid (:uuid interaction)
      :org-uuid (:org-uuid interaction)
+     :org org
      :board-uuid  (:board-uuid interaction)
      :content content
      :user user
