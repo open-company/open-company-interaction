@@ -50,6 +50,7 @@
   {:notification-type (schema/pred notification-type?)
    :resource-type (schema/pred resource-type?)
    :uuid lib-schema/UniqueID
+   (schema/optional-key :secure-uuid) lib-schema/UniqueID
    :org-uuid lib-schema/UniqueID
    :org {schema/Any schema/Any}
    :board-uuid lib-schema/UniqueID
@@ -106,19 +107,20 @@
                  (db-common/read-resource conn "interactions" resource-uuid)) ; for comment reaction
         comment-reaction? (if (:resource-uuid item) true false)
         org-uuid (:org-uuid interaction)
-        org (first (db-common/read-resources conn "orgs" "uuid" org-uuid))]
-    {:notification-type notification-type
-     :resource-type (resource-type interaction)
-     :uuid (:uuid interaction)
-     :org-uuid (:org-uuid interaction)
-     :org org
-     :board-uuid  (:board-uuid interaction)
-     :content content
-     :user user
-     :item-publisher (if comment-reaction?
-                        (:author item) ; author of the comment
-                        (:publisher item)) ; publisher of the entry (interactions only occur on published entries)
-     :notification-at (oc-time/current-timestamp)}))
+        org (first (db-common/read-resources conn "orgs" "uuid" org-uuid))
+        trigger {:notification-type notification-type
+                 :resource-type (resource-type interaction)
+                 :uuid (:uuid interaction)
+                 :org-uuid (:org-uuid interaction)
+                 :org org
+                 :board-uuid (:board-uuid interaction)
+                 :content content
+                 :user user
+                 :item-publisher (if comment-reaction?
+                                    (:author item) ; author of the comment
+                                    (:publisher item)) ; publisher of the entry (interactions only occur on published entries)
+                 :notification-at (oc-time/current-timestamp)}]
+    (if comment-reaction? trigger (assoc trigger :secure-uuid (:secure-uuid item)))))
 
 (schema/defn ^:always-validate send-trigger! [trigger :- NotificationTrigger]
   (if (clojure.string/blank? config/aws-sns-interaction-topic-arn)
