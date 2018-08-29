@@ -59,7 +59,7 @@
     (schema/optional-key :old) (schema/conditional #(= (resource-type %) :comment) interact-res/Comment
                                                    :else interact-res/Reaction)}
    :user lib-schema/User
-   :entry-publisher lib-schema/User
+   :item-publisher lib-schema/User
    :notification-at lib-schema/ISO8601})
 
 ;; ----- Event handling -----
@@ -102,7 +102,9 @@
 
 (defn ->trigger [conn notification-type interaction content user]
   (let [resource-uuid (or (-> content :new :resource-uuid) (-> content :old :resource-uuid))
-        entry (db-common/read-resource conn "entries" resource-uuid)
+        item (or (db-common/read-resource conn "entries" resource-uuid) ; for post reaction or comment
+                 (db-common/read-resource conn "interactions" resource-uuid)) ; for comment reaction
+        comment-reaction? (if (:resource-uuid item) true false)
         org-uuid (:org-uuid interaction)
         org (first (db-common/read-resources conn "orgs" "uuid" org-uuid))]
     {:notification-type notification-type
@@ -113,7 +115,9 @@
      :board-uuid  (:board-uuid interaction)
      :content content
      :user user
-     :entry-publisher (:publisher entry) ; interactions only occur on published entries
+     :item-publisher (if comment-reaction?
+                        (:author item) ; author of the comment
+                        (:publisher item)) ; publisher of the entry (interactions only occur on published entries)
      :notification-at (oc-time/current-timestamp)}))
 
 (schema/defn ^:always-validate send-trigger! [trigger :- NotificationTrigger]
