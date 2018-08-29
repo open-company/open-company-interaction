@@ -28,7 +28,7 @@
         result (common/create-interaction conn {:new-interaction (interact-res/->reaction interaction-map author)}
                                                 reaction-count)
         new-reaction (:created-interaction result)]
-    (notification/send-trigger! (notification/->trigger :add new-reaction
+    (notification/send-trigger! (notification/->trigger conn :add new-reaction
                                                         {:new new-reaction} (:user ctx)))
     result))
 
@@ -36,7 +36,7 @@
   (let [existing-reaction (:existing-reaction ctx)]
     (when existing-reaction
       (interact-res/delete-interaction! conn (:uuid existing-reaction))
-      (notification/send-trigger! (notification/->trigger :delete existing-reaction
+      (notification/send-trigger! (notification/->trigger conn :delete existing-reaction
                                                           {:old existing-reaction} (:user ctx)))
       (watcher/notify-watcher :interaction-reaction/delete
                               existing-reaction

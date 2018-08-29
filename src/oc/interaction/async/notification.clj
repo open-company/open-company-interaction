@@ -7,6 +7,7 @@
             [cheshire.core :as json]
             [amazonica.aws.sns :as sns]
             [schema.core :as schema]
+            [oc.lib.db.common :as db-common]
             [oc.lib.schema :as lib-schema]
             [oc.lib.time :as oc-time]
             [oc.interaction.config :as config]
@@ -49,7 +50,9 @@
   {:notification-type (schema/pred notification-type?)
    :resource-type (schema/pred resource-type?)
    :uuid lib-schema/UniqueID
+   (schema/optional-key :secure-uuid) lib-schema/UniqueID
    :org-uuid lib-schema/UniqueID
+   :org {schema/Any schema/Any}
    :board-uuid lib-schema/UniqueID
    :content {
     (schema/optional-key :new) (schema/conditional #(= (resource-type %) :comment) interact-res/Comment
@@ -57,6 +60,7 @@
     (schema/optional-key :old) (schema/conditional #(= (resource-type %) :comment) interact-res/Comment
                                                    :else interact-res/Reaction)}
    :user lib-schema/User
+   :item-publisher lib-schema/User
    :notification-at lib-schema/ISO8601})
 
 ;; ----- Event handling -----
@@ -97,15 +101,26 @@
 
 ;; ----- Notification triggering -----
 
-(defn ->trigger [notification-type interaction content user]
-  {:notification-type notification-type
-   :resource-type (resource-type interaction)
-   :uuid (:uuid interaction)
-   :org-uuid (:org-uuid interaction)
-   :board-uuid  (:board-uuid interaction)
-   :content content
-   :user user
-   :notification-at (oc-time/current-timestamp)})
+(defn ->trigger [conn notification-type interaction content user]
+  (let [resource-uuid (or (-> content :new :resource-uuid) (-> content :old :resource-uuid))
+        item (or (db-common/read-resource conn "entries" resource-uuid) ; for post reaction or comment
+                 (db-common/read-resource conn "interactions" resource-uuid)) ; for comment reaction
+        comment-reaction? (if (:resource-uuid item) true false)
+        org-uuid (:org-uuid interaction)
+        org (first (db-common/read-resources conn "orgs" "uuid" org-uuid))
+        trigger {:notification-type notification-type
+                 :resource-type (resource-type interaction)
+                 :uuid (:uuid interaction)
+                 :org-uuid (:org-uuid interaction)
+                 :org org
+                 :board-uuid (:board-uuid interaction)
+                 :content content
+                 :user user
+                 :item-publisher (if comment-reaction?
+                                    (:author item) ; author of the comment
+                                    (:publisher item)) ; publisher of the entry (interactions only occur on published entries)
+                 :notification-at (oc-time/current-timestamp)}]
+    (if comment-reaction? trigger (assoc trigger :secure-uuid (:secure-uuid item)))))
 
 (schema/defn ^:always-validate send-trigger! [trigger :- NotificationTrigger]
   (if (clojure.string/blank? config/aws-sns-interaction-topic-arn)
@@ -114,6 +129,7 @@
     (do
       (timbre/debug "Triggering a notification for:" (or (-> trigger :content :old :uuid)
                                                          (-> trigger :content :new :uuid)))
+      (timbre/trace "Sending trigger:" trigger)
       (>!! notification-chan trigger))))
 
 ;; ----- Component start/stop -----
