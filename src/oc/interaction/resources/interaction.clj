@@ -43,7 +43,7 @@
   (let [stripped-resource (if (:body resource)
                             (assoc resource
                                    :body
-                                   (str/strip-tags (:body resource) ["script"]))
+                                   (str/strip-tags (:body resource) ["script", "style"]))
                             resource)]
     (apply dissoc stripped-resource reserved-properties)))
 
