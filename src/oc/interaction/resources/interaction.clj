@@ -4,6 +4,7 @@
             [if-let.core :refer (if-let*)]
             [oc.lib.db.common :as db-common]
             [schema.core :as schema]
+            [cuerdas.core :as str]
             [oc.lib.schema :as lib-schema]))
 
 ;; ----- RethinkDB metadata -----
@@ -39,7 +40,12 @@
 (defn clean
   "Remove any reserved properties from the resource."
   [resource]
-  (apply dissoc resource reserved-properties))
+  (let [stripped-resource (if (:body resource)
+                            (assoc-in resource
+                                   [:body]
+                                   (str/strip-tags (:body resource) ["script", "style"]))
+                            resource)]
+    (apply dissoc stripped-resource reserved-properties)))
 
 ;; ----- Interaction CRUD -----
 
