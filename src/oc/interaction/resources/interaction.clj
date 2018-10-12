@@ -41,7 +41,7 @@
   "Remove any reserved properties from the resource."
   [resource]
   (let [stripped-resource (if (:body resource)
-                            (update-in resource
+                            (assoc-in resource
                                    [:body]
                                    (str/strip-tags (:body resource) ["script", "style"]))
                             resource)]
