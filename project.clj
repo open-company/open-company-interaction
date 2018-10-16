@@ -24,9 +24,7 @@
     [compojure "1.6.1"] ; Web routing https://github.com/weavejester/compojure
     [clj-http "3.9.1"] ; HTTP client https://github.com/dakrone/clj-http
     [clj-soup/clojure-soup "0.1.3"] ; Clojure wrapper for jsoup HTML parser https://github.com/mfornos/clojure-soup
-    ;; String library
-    [funcool/cuerdas "2.0.6"]
-    [open-company/lib "0.16.13"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    [open-company/lib "0.16.16alpha"] ; Library for OC projects https://github.com/open-company/open-company-lib
 
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
