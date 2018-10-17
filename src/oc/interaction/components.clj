@@ -137,6 +137,10 @@
     (timbre/info "[handler] stopped")
     (dissoc component :handler)))
 
+(defn db-only-interaction-system [_opts]
+  (component/system-map
+   :db-pool (map->RethinkPool {:size c/db-pool-size :regenerate-interval 5})))
+
 (defn interaction-system [{:keys [port handler-fn sqs-creds sqs-queue slack-sqs-msg-handler] :as opts}]
   (component/system-map
     :db-pool (map->RethinkPool {:size c/db-pool-size :regenerate-interval 5})
