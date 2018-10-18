@@ -13,18 +13,19 @@
 
   ;; All profile dependencies
   :dependencies [
-    [org.clojure/clojure "1.10.0-alpha6"] ; Lisp on the JVM http://clojure.org/documentation
+    [org.clojure/clojure "1.10.0-RC1"] ; Lisp on the JVM http://clojure.org/documentation
     [org.clojure/core.cache "0.7.1"] ; Clojure in-memory caching https://github.com/clojure/core.cache
-    [org.clojure/tools.cli "0.3.7"] ; Command-line parsing https://github.com/clojure/tools.cli
-    [ring/ring-devel "1.7.0-RC2"] ; Web application library https://github.com/ring-clojure/ring
-    [ring/ring-core "1.7.0-RC2"] ; Web application library https://github.com/ring-clojure/ring
+    [org.clojure/tools.cli "0.4.1"] ; Command-line parsing https://github.com/clojure/tools.cli
+    [ring/ring-devel "1.7.0"] ; Web application library https://github.com/ring-clojure/ring
+    [ring/ring-core "1.7.0"] ; Web application library https://github.com/ring-clojure/ring
     [ring/ring-json "0.5.0-beta1"] ; JSON request/response https://github.com/ring-clojure/ring-json
     [jumblerg/ring.middleware.cors "1.0.1"] ; CORS library https://github.com/jumblerg/ring.middleware.cors
     [ring-logger-timbre "0.7.6" :exclusions [com.taoensso/encore]] ; Ring logging https://github.com/nberger/ring-logger-timbre
     [compojure "1.6.1"] ; Web routing https://github.com/weavejester/compojure
     [clj-http "3.9.1"] ; HTTP client https://github.com/dakrone/clj-http
     [clj-soup/clojure-soup "0.1.3"] ; Clojure wrapper for jsoup HTML parser https://github.com/mfornos/clojure-soup
-    [open-company/lib "0.16.16alpha"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    ;; String library
+    [open-company/lib "0.16.16"] ; Library for OC projects https://github.com/open-company/open-company-lib
 
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
@@ -62,12 +63,12 @@
         :open-company-auth-passphrase "this_is_a_qa_secret" ; JWT secret
       }
       :dependencies [
-        [midje "1.9.3-alpha1"] ; Example-based testing https://github.com/marick/Midje
+        [midje "1.9.3"] ; Example-based testing https://github.com/marick/Midje
         [ring-mock "0.1.5"] ; Test Ring requests https://github.com/weavejester/ring-mock
       ]
       :plugins [
         [lein-midje "3.2.1"] ; Example-based testing https://github.com/marick/lein-midje
-        [jonase/eastwood "0.2.9"] ; Linter https://github.com/jonase/eastwood
+        [jonase/eastwood "0.3.1"] ; Linter https://github.com/jonase/eastwood
         [lein-kibit "0.1.6"] ; Static code search for non-idiomatic code https://github.com/jonase/kibit
       ]
     }
@@ -93,7 +94,7 @@
         [lein-ancient "0.6.15"] ; Check for outdated dependencies https://github.com/xsc/lein-ancient
         [lein-spell "0.1.0"] ; Catch spelling mistakes in docs and docstrings https://github.com/cldwalker/lein-spell
         [lein-deps-tree "0.1.2"] ; Print a tree of project dependencies https://github.com/the-kenny/lein-deps-tree
-        [venantius/yagni "0.1.4"] ; Dead code finder https://github.com/venantius/yagni
+        [venantius/yagni "0.1.6"] ; Dead code finder https://github.com/venantius/yagni
       ]  
     }]
     :repl-config [:dev {
@@ -137,7 +138,7 @@
   :repl-options {
     :welcome (println (str "\n" (slurp (clojure.java.io/resource "ascii_art.txt")) "\n"
                       "OpenCompany Interaction REPL\n"
-                      "\nReady to do your bidding... I suggest (go) or (go <port>) as your first command.\n"))
+                      "\nReady to do your bidding... I suggest (go) or (go <port>) or (go-db) as your first command.\n"))
     :init-ns dev
   }
 
