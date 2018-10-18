@@ -4,7 +4,7 @@
             [if-let.core :refer (if-let*)]
             [oc.lib.db.common :as db-common]
             [schema.core :as schema]
-            [cuerdas.core :as str]
+            [oc.lib.text :as str]
             [oc.lib.schema :as lib-schema]))
 
 ;; ----- RethinkDB metadata -----
@@ -43,7 +43,7 @@
   (let [stripped-resource (if (:body resource)
                             (assoc-in resource
                                    [:body]
-                                   (str/strip-tags (:body resource) ["script", "style"]))
+                                   (str/strip-xss-tags (:body resource)))
                             resource)]
     (apply dissoc stripped-resource reserved-properties)))
 
