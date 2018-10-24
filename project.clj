@@ -25,8 +25,8 @@
     [clj-http "3.9.1"] ; HTTP client https://github.com/dakrone/clj-http
     [clj-soup/clojure-soup "0.1.3"] ; Clojure wrapper for jsoup HTML parser https://github.com/mfornos/clojure-soup
     ;; String library
-    [open-company/lib "0.16.17alpha"] ; Library for OC projects https://github.com/open-company/open-company-lib
-
+    
+    [open-company/lib "0.16.17"] ; Library for OC projects https://github.com/open-company/open-company-lib
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
@@ -63,7 +63,7 @@
         :open-company-auth-passphrase "this_is_a_qa_secret" ; JWT secret
       }
       :dependencies [
-        [midje "1.9.3"] ; Example-based testing https://github.com/marick/Midje
+        [midje "1.9.4"] ; Example-based testing https://github.com/marick/Midje
         [ring-mock "0.1.5"] ; Test Ring requests https://github.com/weavejester/ring-mock
       ]
       :plugins [
