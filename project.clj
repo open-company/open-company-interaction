@@ -26,7 +26,7 @@
     [clj-soup/clojure-soup "0.1.3"] ; Clojure wrapper for jsoup HTML parser https://github.com/mfornos/clojure-soup
     ;; String library
     
-    [open-company/lib "0.16.22alpha"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    [open-company/lib "0.16.22"] ; Library for OC projects https://github.com/open-company/open-company-lib
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
