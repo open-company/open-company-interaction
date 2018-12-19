@@ -86,7 +86,7 @@
 
 ;; A resource for operations on a specific comment
 (defresource comment-item [conn org-uuid board-uuid resource-uuid comment-uuid]
-  (api-common/open-company-authenticated-resource config/passphrase) ; verify validity and presence of required JWToken
+  (api-common/open-company-id-token-resource config/passphrase) ; verify validity and presence of required JWToken
 
   :allowed-methods [:options :patch :delete]
 
@@ -130,7 +130,7 @@
 
 ;; A resource for operations on a list of comments
 (defresource comment-list [conn org-uuid board-uuid resource-uuid]
-  (api-common/open-company-authenticated-resource config/passphrase) ; verify validity and presence of required JWToken
+  (api-common/open-company-id-token-resource config/passphrase) ; verify validity and presence of required JWToken
 
   :allowed-methods [:options :get :post]
 
