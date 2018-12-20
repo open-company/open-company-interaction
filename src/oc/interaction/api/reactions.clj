@@ -59,7 +59,7 @@
 
 ;; A resource for operations on a reaction
 (defresource reaction [conn org-uuid board-uuid resource-uuid reaction-unicode]
-  (api-common/open-company-authenticated-resource config/passphrase) ; verify validity and presence of required JWToken
+  (api-common/open-company-id-token-resource config/passphrase) ; verify validity and presence of required JWToken
 
   :allowed-methods [:options :put :delete]
 
@@ -102,7 +102,7 @@
 
 ;; A resource for creating a new reaction
 (defresource new-reaction [conn org-uuid board-uuid resource-uuid]
-  (api-common/open-company-authenticated-resource config/passphrase) ; verify validity and presence of required JWToken
+  (api-common/open-company-id-token-resource config/passphrase) ; verify validity and presence of required JWToken
 
   :allowed-methods [:options :post]
 
