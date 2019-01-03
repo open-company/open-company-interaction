@@ -13,11 +13,11 @@
 
   ;; All profile dependencies
   :dependencies [
-    [org.clojure/clojure "1.10.0-RC1"] ; Lisp on the JVM http://clojure.org/documentation
+    [org.clojure/clojure "1.10.0"] ; Lisp on the JVM http://clojure.org/documentation
     [org.clojure/core.cache "0.7.1"] ; Clojure in-memory caching https://github.com/clojure/core.cache
     [org.clojure/tools.cli "0.4.1"] ; Command-line parsing https://github.com/clojure/tools.cli
-    [ring/ring-devel "1.7.0"] ; Web application library https://github.com/ring-clojure/ring
-    [ring/ring-core "1.7.0"] ; Web application library https://github.com/ring-clojure/ring
+    [ring/ring-devel "1.7.1"] ; Web application library https://github.com/ring-clojure/ring
+    [ring/ring-core "1.7.1"] ; Web application library https://github.com/ring-clojure/ring
     [ring/ring-json "0.5.0-beta1"] ; JSON request/response https://github.com/ring-clojure/ring-json
     [jumblerg/ring.middleware.cors "1.0.1"] ; CORS library https://github.com/jumblerg/ring.middleware.cors
     [ring-logger-timbre "0.7.6" :exclusions [com.taoensso/encore]] ; Ring logging https://github.com/nberger/ring-logger-timbre
@@ -26,7 +26,7 @@
     [clj-soup/clojure-soup "0.1.3"] ; Clojure wrapper for jsoup HTML parser https://github.com/mfornos/clojure-soup
     ;; String library
     
-    [open-company/lib "0.16.32alpha"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    [open-company/lib "0.16.32"] ; Library for OC projects https://github.com/open-company/open-company-lib
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
@@ -68,7 +68,7 @@
       ]
       :plugins [
         [lein-midje "3.2.1"] ; Example-based testing https://github.com/marick/lein-midje
-        [jonase/eastwood "0.3.1"] ; Linter https://github.com/jonase/eastwood
+        [jonase/eastwood "0.3.4"] ; Linter https://github.com/jonase/eastwood
         [lein-kibit "0.1.6"] ; Static code search for non-idiomatic code https://github.com/jonase/kibit
       ]
     }
@@ -94,7 +94,7 @@
         [lein-ancient "0.6.15"] ; Check for outdated dependencies https://github.com/xsc/lein-ancient
         [lein-spell "0.1.0"] ; Catch spelling mistakes in docs and docstrings https://github.com/cldwalker/lein-spell
         [lein-deps-tree "0.1.2"] ; Print a tree of project dependencies https://github.com/the-kenny/lein-deps-tree
-        [venantius/yagni "0.1.6"] ; Dead code finder https://github.com/venantius/yagni
+        [venantius/yagni "0.1.7"] ; Dead code finder https://github.com/venantius/yagni
       ]  
     }]
     :repl-config [:dev {
@@ -163,7 +163,8 @@
     ;; contant-test - just seems mostly ill-advised, logical constants are useful in something like a `->cond` 
     ;; deprecations - the useful `either` from Prismatic schema is deprecated, we'll eventually switch to clojure.spec
     ;; wrong-arity - Eastwood can't decipder the arity of some Amazonica SQS fns
-    :exclude-linters [:constant-test :deprecations :wrong-arity]
+    ;; implicit-dependencies - uhh, just seems dumb
+    :exclude-linters [:constant-test :deprecations :wrong-arity :implicit-dependencies]
 
     ;; Enable some linters that are disabled by default
     :add-linters [:unused-namespaces :unused-private-vars] ; :unused-locals]
