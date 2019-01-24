@@ -14,7 +14,7 @@
   ;; All profile dependencies
   :dependencies [
     [org.clojure/clojure "1.10.0"] ; Lisp on the JVM http://clojure.org/documentation
-    [org.clojure/core.cache "0.7.1"] ; Clojure in-memory caching https://github.com/clojure/core.cache
+    [org.clojure/core.cache "0.7.2"] ; Clojure in-memory caching https://github.com/clojure/core.cache
     [org.clojure/tools.cli "0.4.1"] ; Command-line parsing https://github.com/clojure/tools.cli
     [ring/ring-devel "1.7.1"] ; Web application library https://github.com/ring-clojure/ring
     [ring/ring-core "1.7.1"] ; Web application library https://github.com/ring-clojure/ring
@@ -26,7 +26,7 @@
     [clj-soup/clojure-soup "0.1.3"] ; Clojure wrapper for jsoup HTML parser https://github.com/mfornos/clojure-soup
     ;; String library
     
-    [open-company/lib "0.16.32"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    [open-company/lib "0.16.33"] ; Library for OC projects https://github.com/open-company/open-company-lib
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
@@ -63,7 +63,7 @@
         :open-company-auth-passphrase "this_is_a_qa_secret" ; JWT secret
       }
       :dependencies [
-        [midje "1.9.4"] ; Example-based testing https://github.com/marick/Midje
+        [midje "1.9.6"] ; Example-based testing https://github.com/marick/Midje
         [ring-mock "0.1.5"] ; Test Ring requests https://github.com/weavejester/ring-mock
       ]
       :plugins [

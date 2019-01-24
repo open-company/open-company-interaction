@@ -15,12 +15,6 @@
 
 ;; ----- Utility Functions -----
 
-(defn- slack-user
-  "Do we have a user ID and token for the mirroring Slack org?"
-  [user channel]
-  (let [slack-org-id (keyword (:slack-org-id channel))]
-    (-> user :slack-users slack-org-id)))
-
 (defn- slack-bot
   "Do we have a Slack bot for the mirroring Slack org?"
   [user channel]
@@ -29,15 +23,6 @@
     (some #(if (= (:slack-org-id %) slack-org-id) % false) slack-bots)))
 
 ;; ----- Actions -----
-
-(defn- echo-comment
-  "Given a decoded JWToken (user), a resource, and a comment (interaction), mirror the comment to Slack as the user."
-  [user resource channel interaction]
-  (>!! mirror/echo-chan {:slack-bot (slack-bot user channel)
-                         :slack-user (slack-user user channel)
-                         :comment interaction
-                         :resource resource
-                         :slack-channel (assoc channel :thread (-> resource :slack-thread :thread))}))
 
 (defn- proxy-comment
   "Given a decoded JWToken (user), a resource, and a comment (interaction), mirror it to Slack on behalf of the user."
@@ -59,20 +44,12 @@
       (timbre/debug "Skipping Slack mirroring of comment (no Slack mirror):" (:uuid interaction))))
 
   ([conn user resource channel interaction]
-  (cond
-    ;; we can mirror it to Slack as the user
-    (slack-user user channel)
-    (do (timbre/info "Using Slack user to mirror comment:" (:uuid interaction) "of resource:" (:uuid resource))
-        (echo-comment user resource channel interaction))
-
-    ;; we can mirror it to Slack by proxy with the bot
-    (slack-bot user channel)
+  (if (slack-bot user channel) ;; we can mirror it to Slack by proxy with the bot
     (do
       (timbre/info "Using Slack bot to mirror comment:" (:uuid interaction)  "of resource:" (:uuid resource))
       (proxy-comment user resource channel interaction))
 
     ;; no slack user or bot
-    :else
     (timbre/debug "Skipping Slack mirroring of comment (no user or bot):" (:uuid interaction)))))
 
 (defn create-interaction 
