@@ -69,13 +69,16 @@
 (defmethod -event-msg-handler
   :auth/jwt
   
-  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
-  (let [client-id (-> ring-req :params :client-id)
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn ring-req]}]
+  (let [valid-origin? (watcher/valid-origin-header? ring-req)
+        client-id (-> ring-req :params :client-id)
         jwt-valid? (jwt/valid? (:jwt ?data) c/passphrase)]
+    (timbre/info "[websocket] origin" (-> ring-req :headers (get "origin")) (if valid-origin? "valid" "invalid"))
     (timbre/info "[websocket] auth/jwt" (if jwt-valid? "valid" "invalid") "by" client-id)
     ;; Get the jwt and disconnect the client if it's not good!
     (when ?reply-fn
-      (?reply-fn {:valid jwt-valid?}))))
+      (?reply-fn {:valid (and valid-origin?
+                              jwt-valid?)}))))
 
 (defmethod -event-msg-handler
   :watch/board
