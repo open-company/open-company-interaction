@@ -74,3 +74,6 @@
 
 (defonce default-comment-reactions ["👍"])
 
+;; ----- WS origin -----
+
+(defonce ensure-origin  (or (env :oc-ws-ensure-origin) false))

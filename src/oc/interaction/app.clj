@@ -20,7 +20,8 @@
     [oc.interaction.api.comments :as comments-api]
     [oc.interaction.api.reactions :as reactions-api]
     [oc.interaction.api.websockets :as websockets-api]
-    [oc.interaction.async.slack-router :as slack-router]))
+    [oc.interaction.async.slack-router :as slack-router]
+    [oc.lib.middleware.wrap-ensure-origin :refer (wrap-ensure-origin)]))
 
 ;; ----- Unhandled Exceptions -----
 
@@ -59,6 +60,7 @@
     "Hot-reload: " c/hot-reload "\n"
     "Trace: " c/liberator-trace "\n"
     "Log level: " c/log-level "\n"
+    "Ensure origin: " c/ensure-origin "\n"
     "Sentry: " c/dsn "\n\n"
     (when c/intro? "Ready to serve...\n"))))
 
@@ -71,6 +73,7 @@
     true              wrap-params
     c/liberator-trace (wrap-trace :header :ui)
     true              (wrap-cors #".*")
+    c/ensure-origin   wrap-ensure-origin
     c/hot-reload      wrap-reload))
 
 (defn start
