@@ -40,6 +40,7 @@
 
 (defonce hot-reload (bool (or (env :hot-reload) false)))
 (defonce interaction-server-port (Integer/parseInt (or (env :port) "3002")))
+(defonce ensure-origin  (or (env :oc-ws-ensure-origin) true))
 
 ;; ----- Liberator -----
 
@@ -70,10 +71,6 @@
 
 (defonce slack-verification-token (env :open-company-slack-verification-token))
 
-;; ----- OpenCompany -----
+;; ----- Interaction service -----
 
 (defonce default-comment-reactions ["👍"])
-
-;; ----- WS origin -----
-
-(defonce ensure-origin  (or (env :oc-ws-ensure-origin) false))

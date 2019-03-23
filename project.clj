@@ -13,8 +13,8 @@
 
   ;; All profile dependencies
   :dependencies [
-    [org.clojure/clojure "1.10.0"] ; Lisp on the JVM http://clojure.org/documentation
-    [org.clojure/core.cache "0.7.1"] ; Clojure in-memory caching https://github.com/clojure/core.cache
+    [org.clojure/clojure "1.10.1-beta1"] ; Lisp on the JVM http://clojure.org/documentation
+    [org.clojure/core.cache "0.7.2"] ; Clojure in-memory caching https://github.com/clojure/core.cache
     [org.clojure/tools.cli "0.4.1"] ; Command-line parsing https://github.com/clojure/tools.cli
     [ring/ring-devel "1.7.1"] ; Web application library https://github.com/ring-clojure/ring
     [ring/ring-core "1.7.1"] ; Web application library https://github.com/ring-clojure/ring
@@ -24,9 +24,8 @@
     [compojure "1.6.1"] ; Web routing https://github.com/weavejester/compojure
     [clj-http "3.9.1"] ; HTTP client https://github.com/dakrone/clj-http
     [clj-soup/clojure-soup "0.1.3"] ; Clojure wrapper for jsoup HTML parser https://github.com/mfornos/clojure-soup
-    ;; String library
     
-    [open-company/lib "0.16.39alpha-3"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    [open-company/lib "0.16.39-alpha4"] ; Library for OC projects https://github.com/open-company/open-company-lib
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
@@ -48,7 +47,7 @@
 
   ;; All profile plugins
   :plugins [
-    [lein-ring "0.12.4"] ; Common ring tasks https://github.com/weavejester/lein-ring
+    [lein-ring "0.12.5"] ; Common ring tasks https://github.com/weavejester/lein-ring
     [lein-environ "1.1.0"] ; Get environment settings from different sources https://github.com/weavejester/environ
   ]
 
@@ -60,15 +59,16 @@
         :db-name "open_company_storage_qa"
         :liberator-trace "false"
         :hot-reload "false"
+        :oc-ws-ensure-origin false ; local
         :open-company-auth-passphrase "this_is_a_qa_secret" ; JWT secret
       }
       :dependencies [
-        [midje "1.9.4"] ; Example-based testing https://github.com/marick/Midje
+        [midje "1.9.6"] ; Example-based testing https://github.com/marick/Midje
         [ring-mock "0.1.5"] ; Test Ring requests https://github.com/weavejester/ring-mock
       ]
       :plugins [
         [lein-midje "3.2.1"] ; Example-based testing https://github.com/marick/lein-midje
-        [jonase/eastwood "0.3.4"] ; Linter https://github.com/jonase/eastwood
+        [jonase/eastwood "0.3.5"] ; Linter https://github.com/jonase/eastwood
         [lein-kibit "0.1.6"] ; Static code search for non-idiomatic code https://github.com/jonase/kibit
       ]
     }
@@ -79,6 +79,7 @@
         :db-name "open_company_storage_dev"
         :liberator-trace "true" ; liberator debug data in HTTP response headers
         :hot-reload "true" ; reload code when changed on the file system
+        :oc-ws-ensure-origin false ; local
         :open-company-auth-passphrase "this_is_a_dev_secret" ; JWT secret
         :aws-access-key-id "CHANGE-ME"
         :aws-secret-access-key "CHANGE-ME"
@@ -88,7 +89,7 @@
         :log-level "debug"
       }
       :plugins [
-        [lein-bikeshed "0.5.1"] ; Check for code smells https://github.com/dakrone/lein-bikeshed
+        [lein-bikeshed "0.5.2"] ; Check for code smells https://github.com/dakrone/lein-bikeshed
         [lein-checkall "0.1.1"] ; Runs bikeshed, kibit and eastwood https://github.com/itang/lein-checkall
         [lein-pprint "1.2.0"] ; pretty-print the lein project map https://github.com/technomancy/leiningen/tree/master/lein-pprint
         [lein-ancient "0.6.15"] ; Check for outdated dependencies https://github.com/xsc/lein-ancient
