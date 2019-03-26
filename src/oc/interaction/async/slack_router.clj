@@ -19,8 +19,13 @@
 (defonce slack-router-go (atom nil))
 
 ;; ----- Slack handling -----
-(defn- from-us? [text]
+(defn- has-marker-char? [text]
   (and text (re-find (re-pattern (str "^" lib-slack/marker-char)) text)))
+
+(defn- from-us? [event]
+  (or (has-marker-char? (:text event))
+      (and (:blocks event)
+           (= (:subtype event) "bot_message"))))
 
 (defn slack-event
   "
@@ -67,7 +72,7 @@
         ;; A message to the bot is to a DM channel that starts with D, e.g. "D6DV24ZHP"
         (= \D (first channel))
         (let [text (:text event)]
-          (when-not (from-us? text)
+          (when-not (from-us? event)
             ;; Message from Slack, w/o our marker, needs a bot usage request
             (>!! usage/usage-chan {:body body}))
           {:status 200})
@@ -78,7 +83,7 @@
         :else
         ;; if there's a marker starting the message than this message came form us so can be ignored 
         (let [text (:text event)]
-          (when-not (from-us? text)
+          (when-not (from-us? event)
             ;; Message from Slack, not us, with a thread and w/o our marker, might need mirrored as a comment
             (>!! mirror/incoming-chan {:body body}))
           {:status 200})))))
