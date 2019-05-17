@@ -35,7 +35,7 @@
   (url (:org-uuid interaction) (:board-uuid interaction) (:resource-uuid interaction) (:reaction interaction)))
 
   ([interaction :guard :comment-react]
-    (str (url (dissoc interaction :comment-react)) "/react"))
+    (str (url (:org-uuid interaction) (:board-uuid interaction) (:uuid interaction)) "/react"))
 
   ([interaction]
   (str (url (:org-uuid interaction) (:board-uuid interaction) (:resource-uuid interaction))
