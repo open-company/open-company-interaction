@@ -61,7 +61,7 @@
 (defresource reaction [conn org-uuid board-uuid resource-uuid reaction-unicode]
   (api-common/open-company-id-token-resource config/passphrase) ; verify validity and presence of required JWToken
 
-  :allowed-methods [:options :put :delete]
+  :allowed-methods [:options :post :put :delete]
 
   ;; Media type client accepts
   :available-media-types [interact-rep/reaction-media-type]
@@ -90,6 +90,9 @@
                                           reaction-unicode
                                           (-> ctx :existing-reactions count inc))))
   :delete! (fn [ctx] (delete-reaction conn ctx))
+
+  :post! (fn [ctx]
+           (create-reaction conn ctx org-uuid board-uuid resource-uuid (-> ctx :data)))
 
   ;; Responses
   :respond-with-entity? true
@@ -182,4 +185,11 @@
         (pool/with-pool [conn db-pool] (reaction conn org-uuid board-uuid resource-uuid reaction-unicode)))
       (ANY "/orgs/:org-uuid/boards/:board-uuid/resources/:resource-uuid/reactions/:reaction-unicode/on/"
         [org-uuid board-uuid resource-uuid reaction-unicode]
-        (pool/with-pool [conn db-pool] (reaction conn org-uuid board-uuid resource-uuid reaction-unicode))))))
+        (pool/with-pool [conn db-pool] (reaction conn org-uuid board-uuid resource-uuid reaction-unicode)))
+      ;; Add new arbitrary reaction
+      (ANY "/orgs/:org-uuid/boards/:board-uuid/resources/:resource-uuid/react"
+        [org-uuid board-uuid resource-uuid]
+        (pool/with-pool [conn db-pool] (reaction conn org-uuid board-uuid resource-uuid nil)))
+      (ANY "/orgs/:org-uuid/boards/:board-uuid/resources/:resource-uuid/react/"
+        [org-uuid board-uuid resource-uuid]
+        (pool/with-pool [conn db-pool] (reaction conn org-uuid board-uuid resource-uuid nil))))))
