@@ -88,7 +88,7 @@
 (defresource comment-item [conn org-uuid board-uuid resource-uuid comment-uuid]
   (api-common/open-company-id-token-resource config/passphrase) ; verify validity and presence of required JWToken
 
-  :allowed-methods [:options :post :patch :delete]
+  :allowed-methods [:options :patch :delete]
 
   ;; Media type client accepts
   :available-media-types [interact-rep/comment-media-type]
@@ -200,12 +200,6 @@
         [org-uuid board-uuid resource-uuid comment-uuid]
         (pool/with-pool [conn db-pool] (comment-item conn org-uuid board-uuid resource-uuid comment-uuid)))
       (ANY "/orgs/:org-uuid/boards/:board-uuid/resources/:resource-uuid/comments/:comment-uuid/"
-        [org-uuid board-uuid resource-uuid comment-uuid]
-        (pool/with-pool [conn db-pool] (comment-item conn org-uuid board-uuid resource-uuid comment-uuid)))
-      (ANY "/orgs/:org-uuid/boards/:board-uuid/resources/:resource-uuid/comments/:comment-uuid/react"
-        [org-uuid board-uuid resource-uuid comment-uuid]
-        (pool/with-pool [conn db-pool] (comment-item conn org-uuid board-uuid resource-uuid comment-uuid)))
-      (ANY "/orgs/:org-uuid/boards/:board-uuid/resources/:resource-uuid/comments/:comment-uuid/react/"
         [org-uuid board-uuid resource-uuid comment-uuid]
         (pool/with-pool [conn db-pool] (comment-item conn org-uuid board-uuid resource-uuid comment-uuid))))))
 
