@@ -34,6 +34,9 @@
   ([interaction :guard :reaction]
   (url (:org-uuid interaction) (:board-uuid interaction) (:resource-uuid interaction) (:reaction interaction)))
 
+  ([interaction :guard :comment-react]
+    (str (url (dissoc interaction :comment-react)) "/react"))
+
   ([interaction]
   (str (url (:org-uuid interaction) (:board-uuid interaction) (:resource-uuid interaction))
     "/comments/" (:uuid interaction))))
@@ -44,6 +47,10 @@
 (defn- delete-link [interaction] (hateoas/delete-link (url interaction)))
 
 (defun- reaction-link 
+  ([reaction-url] (hateoas/link-map "react" hateoas/POST
+                    reaction-url
+                    {:content-type "text/plain"
+                     :accept reaction-media-type}))
   ([reaction-url true] (hateoas/link-map "react" hateoas/DELETE reaction-url {}))
   ([reaction-url false] (hateoas/link-map "react" hateoas/PUT reaction-url {:accept reaction-media-type})))
 
@@ -55,7 +62,10 @@
                   ;; to some other board watching user, so we know they have reaction access, but don't
                   ;; know if they've used this reaction or not, so we provide both links
                   [(reaction-link (url interaction) true) (reaction-link (url interaction) false)])]
-    (assoc interaction :links links)))
+    (assoc interaction :links
+     (if (:body interaction)
+      (conj links (reaction-link (url (assoc interaction :comment-react true))))
+      links))))
 
 (defn- access
   "Return `:author` if the specified interaction was authored by the specified user and `:none` if not."
