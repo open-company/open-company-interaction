@@ -17,6 +17,12 @@
 (defn- reaction-for-user [reactions user-id]
   (some #(when (= (-> % :author :user-id) user-id) %) reactions))
 
+(defn- valid-reaction-unicode? [reaction-unicode]
+  (and (string? reaction-unicode)
+       ;; TODO need to verify it's just 1 Unicode char, counting code points doesn't
+       ;; work because something like 🇫🇰 is 2, for now just verify it's 4 or less code points
+       (<= (.codePointCount reaction-unicode 0 (count reaction-unicode)) 4)))
+
 ;; ----- Actions -----
 
 (defn- create-reaction [conn ctx org-uuid board-uuid resource-uuid reaction-unicode reaction-count]
@@ -79,8 +85,28 @@
                            :existing-reaction (reaction-for-user reactions (-> ctx :user :user-id))})
                         false))
 
+  :processable? (by-method {
+    :options true
+    :put true
+    :delete true
+    :post (fn [ctx]
+            (let [body-reaction-unicode (-> ctx :request :body slurp)]
+              (if (valid-reaction-unicode? body-reaction-unicode)
+                {:reaction-unicode body-reaction-unicode}
+                [false {:reason "Provide a single unicode character in the request body as a reaction."}])))
+    })
+
   ;; Actions
   :malformed? false
+  ;; Existentialism
+  :exists? (fn [ctx]
+              (let [reaction (or reaction-unicode (:reaction-unicode ctx))]
+                (if (common/resource-exists? conn org-uuid board-uuid resource-uuid)
+                  (let [reactions (interact-res/get-reactions-by-resource conn resource-uuid reaction)]
+                    {:existing-reactions reactions
+                     :existing-reaction (reaction-for-user reactions (-> ctx :user :user-id))
+                     :existing? true})
+                  false)))
   :put! (fn [ctx] (if (:existing-reaction ctx)
                     true
                     (create-reaction conn ctx
@@ -92,7 +118,7 @@
   :delete! (fn [ctx] (delete-reaction conn ctx))
 
   :post! (fn [ctx]
-           (create-reaction conn ctx org-uuid board-uuid resource-uuid (-> ctx :data)))
+           (create-reaction conn ctx org-uuid board-uuid resource-uuid (:reaction-unicode ctx) (-> ctx :existing-reactions count inc)))
 
   ;; Responses
   :respond-with-entity? true
@@ -126,13 +152,11 @@
   :malformed? false
   :processable? (by-method {
     :options true
-    :post (fn [ctx] (if-let* [reaction-unicode (-> ctx :request :body slurp)
-                              _string (string? reaction-unicode)
-                              ;; TODO need to verify it's just 1 Unicode char, counting code points doesn't
-                              ;; work because something like 🇫🇰 is 2, for now just verify it's 4 or less code points
-                              _length (<= (.codePointCount reaction-unicode 0 (count reaction-unicode)) 4)]
-                          {:reaction-unicode reaction-unicode}
-                          [false {:reason "Provide a single unicode character in the request body as a reaction."}]))})
+    :post (fn [ctx]
+            (let [reaction-unicode (-> ctx :request :body slurp)]
+              (if (valid-reaction-unicode? reaction-unicode)
+                {:reaction-unicode reaction-unicode}
+                [false {:reason "Provide a single unicode character in the request body as a reaction."}])))})
 
   ;; Existentialism
   :exists? (fn [ctx] (if (common/resource-exists? conn org-uuid board-uuid resource-uuid)
