@@ -49,7 +49,7 @@
 (defun- reaction-link 
   ([reaction-url] (hateoas/link-map "react" hateoas/POST
                     reaction-url
-                    {:content-type "text/plain"
+                    {:content-type reaction-media-type
                      :accept reaction-media-type}))
   ([reaction-url true] (hateoas/link-map "react" hateoas/DELETE reaction-url {}))
   ([reaction-url false] (hateoas/link-map "react" hateoas/PUT reaction-url {:accept reaction-media-type})))
@@ -91,9 +91,7 @@
 (defn- comment-reactions
   [interaction user collection-url]
   (if (:body interaction)
-    (let [default-reactions (apply hash-map (interleave config/default-comment-reactions (repeat [])))
-          grouped-reactions (merge default-reactions
-                                   (group-by :reaction (:reactions interaction))) ; reactions grouped by unicode character
+    (let [grouped-reactions (group-by :reaction (:reactions interaction)) ; reactions grouped by unicode character
           counted-reactions-map (map-kv count grouped-reactions) ; how many for each character?
           counted-reactions (map #(vec [% (get counted-reactions-map %)]) (keys counted-reactions-map))
           reaction-authors (map #(:user-id (:author %)) (:reactions interaction))
