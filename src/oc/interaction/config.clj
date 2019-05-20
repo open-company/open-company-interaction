@@ -70,7 +70,3 @@
 ;; ----- Slack -----
 
 (defonce slack-verification-token (env :open-company-slack-verification-token))
-
-;; ----- Interaction service -----
-
-(defonce default-comment-reactions ["👍"])
