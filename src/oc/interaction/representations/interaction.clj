@@ -81,23 +81,30 @@
 
 (defn- comment-reaction-and-link
   "Given the reaction and comment, return a map representation of the reaction for use in the API."
-  [reaction interaction reacted? collection-url]
-  (let [reaction-uuid (first reaction)]
+  [reaction interaction collection-url]
+  (let [reaction-uuid (first reaction)
+        reacted? (nth reaction 2)]
+
     {:reaction reaction-uuid
      :reacted reacted?
-     :count (last reaction)
+     :count (second reaction)
      :links [(reaction-link (comment-reaction-link reaction-uuid interaction collection-url) reacted?)]}))
+
+(defn- user-has-reacted?
+  "Given a user-id and a list of reactions tell if it's one of the authors"
+  [user reactions]
+  (let [all-users (vec (map (comp :user-id :author) reactions))]
+    (boolean (seq (filter #(= % user) all-users)))))
 
 (defn- comment-reactions
   [interaction user collection-url]
   (if (:body interaction)
     (let [grouped-reactions (group-by :reaction (:reactions interaction)) ; reactions grouped by unicode character
           counted-reactions-map (map-kv count grouped-reactions) ; how many for each character?
-          counted-reactions (map #(vec [% (get counted-reactions-map %)]) (keys counted-reactions-map))
-          reaction-authors (map #(:user-id (:author %)) (:reactions interaction))
-          reacted? (boolean (seq (filter #(= % user) (vec reaction-authors))))]
+          authors-reactions-map (map-kv (partial user-has-reacted? user) grouped-reactions)
+          counted-reactions (map #(vec [% (get counted-reactions-map %) (get authors-reactions-map %)]) (keys counted-reactions-map))]
       (assoc interaction :reactions
-             (vec (map #(comment-reaction-and-link % interaction reacted? collection-url) counted-reactions))))
+             (vec (map #(comment-reaction-and-link % interaction collection-url) counted-reactions))))
       interaction))
 
 (defn interaction-representation
