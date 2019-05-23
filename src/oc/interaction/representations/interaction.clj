@@ -34,6 +34,9 @@
   ([interaction :guard :reaction]
   (url (:org-uuid interaction) (:board-uuid interaction) (:resource-uuid interaction) (:reaction interaction)))
 
+  ([interaction :guard :comment-react]
+    (str (url (:org-uuid interaction) (:board-uuid interaction) (:uuid interaction)) "/react"))
+
   ([interaction]
   (str (url (:org-uuid interaction) (:board-uuid interaction) (:resource-uuid interaction))
     "/comments/" (:uuid interaction))))
@@ -44,6 +47,10 @@
 (defn- delete-link [interaction] (hateoas/delete-link (url interaction)))
 
 (defun- reaction-link 
+  ([reaction-url] (hateoas/link-map "react" hateoas/POST
+                    reaction-url
+                    {:content-type reaction-media-type
+                     :accept reaction-media-type}))
   ([reaction-url true] (hateoas/link-map "react" hateoas/DELETE reaction-url {}))
   ([reaction-url false] (hateoas/link-map "react" hateoas/PUT reaction-url {:accept reaction-media-type})))
 
@@ -55,7 +62,10 @@
                   ;; to some other board watching user, so we know they have reaction access, but don't
                   ;; know if they've used this reaction or not, so we provide both links
                   [(reaction-link (url interaction) true) (reaction-link (url interaction) false)])]
-    (assoc interaction :links links)))
+    (assoc interaction :links
+     (if (:body interaction)
+      (conj links (reaction-link (url (assoc interaction :comment-react true))))
+      links))))
 
 (defn- access
   "Return `:author` if the specified interaction was authored by the specified user and `:none` if not."
@@ -71,25 +81,30 @@
 
 (defn- comment-reaction-and-link
   "Given the reaction and comment, return a map representation of the reaction for use in the API."
-  [reaction interaction reacted? collection-url]
-  (let [reaction-uuid (first reaction)]
+  [reaction interaction collection-url]
+  (let [reaction-uuid (first reaction)
+        reacted? (nth reaction 2)]
+
     {:reaction reaction-uuid
      :reacted reacted?
-     :count (last reaction)
+     :count (second reaction)
      :links [(reaction-link (comment-reaction-link reaction-uuid interaction collection-url) reacted?)]}))
+
+(defn- user-has-reacted?
+  "Given a user-id and a list of reactions tell if it's one of the authors"
+  [user reactions]
+  (let [all-users (vec (map (comp :user-id :author) reactions))]
+    (boolean (seq (filter #(= % user) all-users)))))
 
 (defn- comment-reactions
   [interaction user collection-url]
   (if (:body interaction)
-    (let [default-reactions (apply hash-map (interleave config/default-comment-reactions (repeat [])))
-          grouped-reactions (merge default-reactions
-                                   (group-by :reaction (:reactions interaction))) ; reactions grouped by unicode character
+    (let [grouped-reactions (group-by :reaction (:reactions interaction)) ; reactions grouped by unicode character
           counted-reactions-map (map-kv count grouped-reactions) ; how many for each character?
-          counted-reactions (map #(vec [% (get counted-reactions-map %)]) (keys counted-reactions-map))
-          reaction-authors (map #(:user-id (:author %)) (:reactions interaction))
-          reacted? (boolean (seq (filter #(= % user) (vec reaction-authors))))]
+          authors-reactions-map (map-kv (partial user-has-reacted? user) grouped-reactions)
+          counted-reactions (map #(vec [% (get counted-reactions-map %) (get authors-reactions-map %)]) (keys counted-reactions-map))]
       (assoc interaction :reactions
-             (vec (map #(comment-reaction-and-link % interaction reacted? collection-url) counted-reactions))))
+             (vec (map #(comment-reaction-and-link % interaction collection-url) counted-reactions))))
       interaction))
 
 (defn interaction-representation

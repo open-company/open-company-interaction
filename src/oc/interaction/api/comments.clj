@@ -202,3 +202,4 @@
       (ANY "/orgs/:org-uuid/boards/:board-uuid/resources/:resource-uuid/comments/:comment-uuid/"
         [org-uuid board-uuid resource-uuid comment-uuid]
         (pool/with-pool [conn db-pool] (comment-item conn org-uuid board-uuid resource-uuid comment-uuid))))))
+
