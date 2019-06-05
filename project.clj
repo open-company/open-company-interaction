@@ -6,14 +6,14 @@
     :url "https://www.gnu.org/licenses/agpl-3.0.en.html"
   }
 
-  :min-lein-version "2.7.1"
+  :min-lein-version "2.9.1"
 
   ;; JVM memory
   :jvm-opts ^:replace ["-Xms512m" "-Xmx3072m" "-server"]
 
   ;; All profile dependencies
   :dependencies [
-    [org.clojure/clojure "1.10.1-beta1"] ; Lisp on the JVM http://clojure.org/documentation
+    [org.clojure/clojure "1.10.1-RC1"] ; Lisp on the JVM http://clojure.org/documentation
     [org.clojure/core.cache "0.7.2"] ; Clojure in-memory caching https://github.com/clojure/core.cache
     [org.clojure/tools.cli "0.4.2"] ; Command-line parsing https://github.com/clojure/tools.cli
     [ring/ring-devel "1.7.1"] ; Web application library https://github.com/ring-clojure/ring
@@ -22,10 +22,10 @@
     [jumblerg/ring.middleware.cors "1.0.1"] ; CORS library https://github.com/jumblerg/ring.middleware.cors
     [ring-logger-timbre "0.7.6" :exclusions [com.taoensso/encore]] ; Ring logging https://github.com/nberger/ring-logger-timbre
     [compojure "1.6.1"] ; Web routing https://github.com/weavejester/compojure
-    [clj-http "3.9.1"] ; HTTP client https://github.com/dakrone/clj-http
+    [clj-http "3.10.0"] ; HTTP client https://github.com/dakrone/clj-http
     [clj-soup/clojure-soup "0.1.3"] ; Clojure wrapper for jsoup HTML parser https://github.com/mfornos/clojure-soup
 
-    [open-company/lib "0.17.4"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    [open-company/lib "0.17.11"] ; Library for OC projects https://github.com/open-company/open-company-lib
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
