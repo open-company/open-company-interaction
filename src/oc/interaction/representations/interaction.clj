@@ -11,7 +11,7 @@
 
 (def reaction-media-type "application/vnd.open-company.reaction.v1+json")
 
-(def representation-props [:uuid :body :reaction :author :reactions :created-at :updated-at])
+(def representation-props [:uuid :body :reaction :author :reactions :created-at :updated-at :authors :author-ids])
 
 (defn- map-kv
   "Utility function to do an operation on the value of every key in a map."
@@ -83,10 +83,13 @@
   "Given the reaction and comment, return a map representation of the reaction for use in the API."
   [reaction interaction collection-url]
   (let [reaction-uuid (first reaction)
-        reacted? (nth reaction 2)]
+        reacted? (nth reaction 2)
+        authors (nth reaction 3)]
 
     {:reaction reaction-uuid
      :reacted reacted?
+     :authors (mapv :name authors)
+     :author-ids (mapv :user-id authors)
      :count (second reaction)
      :links [(reaction-link (comment-reaction-link reaction-uuid interaction collection-url) reacted?)]}))
 
@@ -102,7 +105,8 @@
     (let [grouped-reactions (group-by :reaction (:reactions interaction)) ; reactions grouped by unicode character
           counted-reactions-map (map-kv count grouped-reactions) ; how many for each character?
           authors-reactions-map (map-kv (partial user-has-reacted? user) grouped-reactions)
-          counted-reactions (map #(vec [% (get counted-reactions-map %) (get authors-reactions-map %)]) (keys counted-reactions-map))]
+          counted-reactions (map #(vec [% (get counted-reactions-map %) (get authors-reactions-map %)
+                                        (mapv :author (get grouped-reactions %))]) (keys counted-reactions-map))]
       (assoc interaction :reactions
              (vec (map #(comment-reaction-and-link % interaction collection-url) counted-reactions))))
       interaction))
