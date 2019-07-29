@@ -20,8 +20,8 @@
 (defn- valid-reaction-unicode? [reaction-unicode]
   (and (string? reaction-unicode)
        ;; TODO need to verify it's just 1 Unicode char, counting code points doesn't
-       ;; work because something like 🇫🇰 is 2, for now just verify it's 4 or less code points
-       (<= (.codePointCount reaction-unicode 0 (count reaction-unicode)) 11)))
+       ;; work because something like 👩‍👩‍👦‍👦 is 11, for now just verify it's 16 or less code points
+       (<= (.codePointCount reaction-unicode 0 (count reaction-unicode)) 16)))
 
 ;; ----- Actions -----
 
