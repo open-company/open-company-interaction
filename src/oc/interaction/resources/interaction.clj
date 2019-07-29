@@ -27,7 +27,9 @@
   :created-at lib-schema/ISO8601
   :updated-at lib-schema/ISO8601})
 
-(def Comment (merge Interaction {:body schema/Str}))
+(def Comment (merge Interaction
+  {:body schema/Str
+   (schema/optional-key :parent-uuid) (schema/maybe lib-schema/UniqueID)}))
 
 (def Reaction (merge Interaction {:reaction schema/Str}))
 
@@ -151,6 +153,12 @@
   [conn uuid :- lib-schema/UniqueID]
   {:pre [(db-common/conn? conn)]}
   (db-common/delete-resource conn table-name uuid))
+
+(schema/defn ^:always-validate get-comment
+  "Given the UUID of a comment, return the comment data"
+  [conn comment-uuid :- lib-schema/UniqueID]
+  {:pre [(db-common/conn? conn)]}
+  (db-common/read-resource conn table-name comment-uuid))
 
 ;; ----- Collection of interactions -----
 
