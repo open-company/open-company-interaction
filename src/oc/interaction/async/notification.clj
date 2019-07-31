@@ -119,22 +119,22 @@
         all-authors (when should-add-other-users?
                       (map :author resource-comments))
         all-author-ids (when should-add-other-users?
-                         (->> all-authors
-                              (map :user-id)
-                              set
-                              (disj (-> resource :publisher :user-id))
-                              (disj (-> item :author :user-id))))
-        distinct-users (when should-add-other-users?
-                         (map (fn [user-id] (first (filterv #(= (:user-id %) user-id) all-authors))) all-author-ids))
+                         (-> (map :user-id all-authors)
+                          set
+                          (disj (-> resource :author :user-id))
+                          (disj (-> item :publisher :user-id))))
+        involved-distinct-users (when should-add-other-users?
+                                  (map (fn [user-id] (first (filterv #(= (:user-id %) user-id) all-authors))) all-author-ids))
+        cleaned-content (dissoc content :existing-comments :existing-resource)
         trigger {:notification-type notification-type
                  :resource-type resource-type
                  :uuid (:uuid interaction)
                  :org-uuid (:org-uuid interaction)
                  :org org
                  :board-uuid (:board-uuid interaction)
-                 :content content
+                 :content cleaned-content
                  :user user
-                 :notify-users distinct-users
+                 :notify-users involved-distinct-users
                  :item-publisher (if comment-reaction?
                                     (:author item) ; author of the comment
                                     (:publisher item)) ; publisher of the entry (interactions only occur on published entries)
