@@ -110,21 +110,30 @@
         org-uuid (:org-uuid interaction)
         resource-type (resource-type interaction)
         org (first (db-common/read-resources conn "orgs" "uuid" org-uuid))
-        should-add-other-users? (and (= notification-type :add)
-                                     (= resource-type :comment))
-        resource (when should-add-other-users?
+        ;; Notify other users involved in the discussion
+        should-notify-other-users? (and (= notification-type :add)
+                                        (= resource-type :comment))
+        resource (when should-notify-other-users?
                    (:existing-resource content))
-        resource-comments (when should-add-other-users?
+        resource-comments (when should-notify-other-users?
                             (:existing-comments content))
-        all-authors (when should-add-other-users?
+        all-authors (when should-notify-other-users?
                       (map :author resource-comments))
-        all-author-ids (when should-add-other-users?
+        all-author-ids (when should-notify-other-users?
+                         ;; Get all the users that are invovled in this disucssion
                          (-> (map :user-id all-authors)
+                          ;; make them unique
                           set
+                          ;; Remove the comment author
                           (disj (-> resource :author :user-id))
+                          ;; And the post publisher
                           (disj (-> item :publisher :user-id))))
-        involved-distinct-users (when should-add-other-users?
-                                  (map (fn [user-id] (first (filterv #(= (:user-id %) user-id) all-authors))) all-author-ids))
+                          ;; NB: users mentioned inside the comment
+                          ;; will be skipped later in notify
+        involved-distinct-users (when should-notify-other-users?
+                                  ;; Go back from a list of ids to a list of Authors
+                                  (map (fn [user-id] (first (filterv #(= (:user-id %) user-id) all-authors)))
+                                   all-author-ids))
         cleaned-content (dissoc content :existing-comments :existing-resource)
         trigger {:notification-type notification-type
                  :resource-type resource-type
