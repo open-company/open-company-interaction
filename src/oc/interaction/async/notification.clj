@@ -125,7 +125,7 @@
                           ;; make them unique
                           set
                           ;; Remove the comment author
-                          (disj (-> resource :author :user-id))
+                          (disj (-> interaction :author :user-id))
                           ;; And the post publisher
                           (disj (-> item :publisher :user-id))))
                           ;; NB: users mentioned inside the comment
