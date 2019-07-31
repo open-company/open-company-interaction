@@ -61,7 +61,8 @@
                                                    :else interact-res/Reaction)}
    :user lib-schema/User
    :item-publisher lib-schema/User
-   :notification-at lib-schema/ISO8601})
+   :notification-at lib-schema/ISO8601
+   (schema/optional-key :notify-users) [lib-schema/Author]})
 
 ;; ----- Event handling -----
 
@@ -107,15 +108,33 @@
                  (db-common/read-resource conn "interactions" resource-uuid)) ; for comment reaction
         comment-reaction? (if (:resource-uuid item) true false)
         org-uuid (:org-uuid interaction)
+        resource-type (resource-type interaction)
         org (first (db-common/read-resources conn "orgs" "uuid" org-uuid))
+        should-add-other-users? (and (= notification-type :add)
+                                     (= resource-type :comment))
+        resource (when should-add-other-users?
+                   (:existing-resource content))
+        resource-comments (when should-add-other-users?
+                            (:existing-comments content))
+        all-authors (when should-add-other-users?
+                      (map :author resource-comments))
+        all-author-ids (when should-add-other-users?
+                         (->> all-authors
+                              (map :user-id)
+                              set
+                              (disj (-> resource :publisher :user-id))
+                              (disj (-> item :author :user-id))))
+        distinct-users (when should-add-other-users?
+                         (map (fn [user-id] (first (filterv #(= (:user-id %) user-id) all-authors))) all-author-ids))
         trigger {:notification-type notification-type
-                 :resource-type (resource-type interaction)
+                 :resource-type resource-type
                  :uuid (:uuid interaction)
                  :org-uuid (:org-uuid interaction)
                  :org org
                  :board-uuid (:board-uuid interaction)
                  :content content
                  :user user
+                 :notify-users distinct-users
                  :item-publisher (if comment-reaction?
                                     (:author item) ; author of the comment
                                     (:publisher item)) ; publisher of the entry (interactions only occur on published entries)

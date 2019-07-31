@@ -69,7 +69,8 @@
       (notification/send-trigger! (notification/->trigger conn
                                                           :update updated-comment
                                                           {:new updated-comment
-                                                           :old existing-comment} (:user ctx)))
+                                                           :old existing-comment
+                                                           :existing-comments (:existing-comments ctx)} (:user ctx)))
       (watcher/notify-watcher :interaction-comment/update updated-comment)
       {:updated-comment updated-comment})
 
@@ -173,7 +174,10 @@
   :post! (fn [ctx] (let [result (common/create-interaction conn ctx)
                          new-comment (:created-interaction result)]
                       (notification/send-trigger! (notification/->trigger conn :add new-comment
-                                                        {:new new-comment} (:user ctx)))))
+                                                        {:new new-comment
+                                                         :existing-comments (:existing-comments ctx)
+                                                         :existing-resource (:existing-resource ctx)}
+                                                        (:user ctx)))))
 
   ;; Responses
   :handle-ok (fn [ctx] (interact-rep/render-interaction-list org-uuid board-uuid resource-uuid
