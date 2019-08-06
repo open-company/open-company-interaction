@@ -40,8 +40,11 @@
     ;; Merge the existing comment with the new updates
     (let [updated-comment (merge existing-comment (interact-res/clean comment-props))]
       (if (and (lib-schema/valid? interact-res/Comment updated-comment)
-               ;; Using str to avoid errors like "" not equal to nil
-               (= (str (:parent-uuid comment-props)) (str (:parent-uuid existing-comment))))
+               ;; If parent-uuid is passed make sure it's not different
+               (or (not (contains? comment-props :parent-uuid))
+                   (and (contains? comment-props :parent-uuid)
+                        ;; Using str to avoid errors like "" not equal to nil
+                        (= (str (:parent-uuid comment-props)) (str (:parent-uuid existing-comment))))))
         {:existing-comment existing-comment :updated-comment updated-comment}
         [false, {:updated-comment updated-comment}])) ; invalid update
     
