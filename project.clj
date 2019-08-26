@@ -14,7 +14,7 @@
   ;; All profile dependencies
   :dependencies [
     [org.clojure/clojure "1.10.1"] ; Lisp on the JVM http://clojure.org/documentation
-    [org.clojure/core.cache "0.7.2"] ; Clojure in-memory caching https://github.com/clojure/core.cache
+    [org.clojure/core.cache "0.8.1"] ; Clojure in-memory caching https://github.com/clojure/core.cache
     [org.clojure/tools.cli "0.4.2"] ; Command-line parsing https://github.com/clojure/tools.cli
     [ring/ring-devel "1.7.1"] ; Web application library https://github.com/ring-clojure/ring
     [ring/ring-core "1.7.1"] ; Web application library https://github.com/ring-clojure/ring

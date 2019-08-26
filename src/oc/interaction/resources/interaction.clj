@@ -131,6 +131,12 @@
   {:pre [(db-common/conn? conn)]}
   (db-common/read-resource conn table-name uuid)))
 
+(schema/defn ^:always-validate get-comment :- (schema/maybe Comment)
+  "Given the UUID of a comment, return the comment, or return nil if it doesn't exist."
+  [conn uuid :- lib-schema/UniqueID]
+  {:pre [(db-common/conn? conn)]}
+  (get-interaction conn uuid))
+
 (schema/defn ^:always-validate update-interaction! :- (schema/maybe (schema/either Comment Reaction))
   "
   Given the interaction's UUID and an updated interaction property map, update the interaction
@@ -153,12 +159,6 @@
   [conn uuid :- lib-schema/UniqueID]
   {:pre [(db-common/conn? conn)]}
   (db-common/delete-resource conn table-name uuid))
-
-(schema/defn ^:always-validate get-comment
-  "Given the UUID of a comment, return the comment data"
-  [conn comment-uuid :- lib-schema/UniqueID]
-  {:pre [(db-common/conn? conn)]}
-  (db-common/read-resource conn table-name comment-uuid))
 
 ;; ----- Collection of interactions -----
 
