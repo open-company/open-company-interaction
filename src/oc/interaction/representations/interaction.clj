@@ -11,7 +11,7 @@
 
 (def reaction-media-type "application/vnd.open-company.reaction.v1+json")
 
-(def representation-props [:uuid :body :reaction :author :reactions :created-at :updated-at :authors :author-ids])
+(def representation-props [:uuid :body :reaction :author :reactions :parent-uuid :created-at :updated-at :authors :author-ids])
 
 (defn- map-kv
   "Utility function to do an operation on the value of every key in a map."

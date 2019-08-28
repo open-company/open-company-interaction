@@ -21,13 +21,16 @@
   [conn ctx org-uuid board-uuid resource-uuid]
   (try
     ;; Create the new interaction from the data provided
-    (let [interact-map (:data ctx)
-          interaction (merge interact-map {
-                        :org-uuid org-uuid
-                        :board-uuid board-uuid
-                        :resource-uuid resource-uuid})
-          author (:user ctx)]
-      {:new-interaction (interact-res/->comment interaction author)})
+    (let [interact-map (:data ctx)]
+      (if (or (empty? (:parent-uuid interact-map))
+              (interact-res/get-comment conn (:parent-uuid interact-map)))
+        (let [interaction (merge interact-map {
+                          :org-uuid org-uuid
+                          :board-uuid board-uuid
+                          :resource-uuid resource-uuid})
+              author (:user ctx)]
+          {:new-interaction (interact-res/->comment interaction author)})
+        [false, {:reason "Parent comment does not exist."}]))
 
     (catch clojure.lang.ExceptionInfo e
       [false, {:reason (.getMessage e)}]))) ; Not a valid new interaction
@@ -36,7 +39,12 @@
   (if-let [existing-comment (or (:existing-comment ctx) (interact-res/get-interaction conn comment-uuid))]
     ;; Merge the existing comment with the new updates
     (let [updated-comment (merge existing-comment (interact-res/clean comment-props))]
-      (if (lib-schema/valid? interact-res/Comment updated-comment)
+      (if (and (lib-schema/valid? interact-res/Comment updated-comment)
+               ;; If parent-uuid is passed make sure it's not different
+               (or (not (contains? comment-props :parent-uuid))
+                   (and (contains? comment-props :parent-uuid)
+                        ;; Using str to avoid errors like "" not equal to nil
+                        (= (str (:parent-uuid comment-props)) (str (:parent-uuid existing-comment))))))
         {:existing-comment existing-comment :updated-comment updated-comment}
         [false, {:updated-comment updated-comment}])) ; invalid update
     
@@ -64,7 +72,8 @@
       (notification/send-trigger! (notification/->trigger conn
                                                           :update updated-comment
                                                           {:new updated-comment
-                                                           :old existing-comment} (:user ctx)))
+                                                           :old existing-comment
+                                                           :existing-comments (:existing-comments ctx)} (:user ctx)))
       (watcher/notify-watcher :interaction-comment/update updated-comment)
       {:updated-comment updated-comment})
 
@@ -168,7 +177,10 @@
   :post! (fn [ctx] (let [result (common/create-interaction conn ctx)
                          new-comment (:created-interaction result)]
                       (notification/send-trigger! (notification/->trigger conn :add new-comment
-                                                        {:new new-comment} (:user ctx)))))
+                                                        {:new new-comment
+                                                         :existing-comments (:existing-comments ctx)
+                                                         :existing-resource (:existing-resource ctx)}
+                                                        (:user ctx)))))
 
   ;; Responses
   :handle-ok (fn [ctx] (interact-rep/render-interaction-list org-uuid board-uuid resource-uuid
