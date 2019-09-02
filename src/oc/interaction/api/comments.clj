@@ -180,16 +180,14 @@
                                                         {:new new-comment
                                                          :existing-comments (:existing-comments ctx)
                                                          :existing-resource (:existing-resource ctx)}
-                                                        (:user ctx)))))
+                                                        (:user ctx)))
+                      result))
 
   ;; Responses
   :handle-ok (fn [ctx] (interact-rep/render-interaction-list org-uuid board-uuid resource-uuid
-                          (:existing-comments ctx) (:user ctx)))
+                        (:existing-comments ctx) (:user ctx)))
   :handle-created (fn [ctx] (let [new-interaction (:created-interaction ctx)]
-                              (api-common/location-response
-                                (interact-rep/url new-interaction)
-                                (interact-rep/render-interaction new-interaction :author)
-                                interact-rep/comment-media-type)))
+                              (interact-rep/render-interaction new-interaction :author)))
   :handle-unprocessable-entity (fn [ctx]
     (api-common/unprocessable-entity-response (:reason ctx))))
 
