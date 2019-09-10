@@ -21,7 +21,11 @@
   [conn ctx org-uuid board-uuid resource-uuid]
   (try
     ;; Create the new interaction from the data provided
-    (let [interact-map (:data ctx)]
+    (let [interact-map (:data ctx)
+          ;; Get the sender client-id from the header
+          ;; and store it in the ctx to be passed to the watcher channel later
+          ;; to skip the sender client when sending the message
+          sender-ws-client-id (common/get-client-id-from-context ctx)]
       (if (or (empty? (:parent-uuid interact-map))
               (interact-res/get-comment conn (:parent-uuid interact-map)))
         (let [interaction (merge interact-map {
@@ -29,7 +33,8 @@
                           :board-uuid board-uuid
                           :resource-uuid resource-uuid})
               author (:user ctx)]
-          {:new-interaction (interact-res/->comment interaction author)})
+          {:new-interaction (interact-res/->comment interaction author)
+           :new-interaction-client-id sender-ws-client-id})
         [false, {:reason "Parent comment does not exist."}]))
 
     (catch clojure.lang.ExceptionInfo e
@@ -74,7 +79,7 @@
                                                           {:new updated-comment
                                                            :old existing-comment
                                                            :existing-comments (:existing-comments ctx)} (:user ctx)))
-      (watcher/notify-watcher :interaction-comment/update updated-comment)
+      (watcher/notify-watcher :interaction-comment/update updated-comment nil (common/get-client-id-from-context ctx))
       {:updated-comment updated-comment})
 
     (do (timbre/error "Failed updating comment:" comment-uuid) false)))
@@ -87,7 +92,7 @@
       (timbre/info "Deleted comment:" comment-uuid)
       (notification/send-trigger! (notification/->trigger conn :delete existing-comment
                                                           {:old existing-comment} (:user ctx)))
-      (watcher/notify-watcher :interaction-comment/delete existing-comment)
+      (watcher/notify-watcher :interaction-comment/delete existing-comment nil (common/get-client-id-from-context ctx))
       true)
     (do (timbre/info "Failed deleting comment:" comment-uuid) false)))
 
@@ -180,16 +185,14 @@
                                                         {:new new-comment
                                                          :existing-comments (:existing-comments ctx)
                                                          :existing-resource (:existing-resource ctx)}
-                                                        (:user ctx)))))
+                                                        (:user ctx)))
+                      result))
 
   ;; Responses
   :handle-ok (fn [ctx] (interact-rep/render-interaction-list org-uuid board-uuid resource-uuid
-                          (:existing-comments ctx) (:user ctx)))
+                        (:existing-comments ctx) (:user ctx)))
   :handle-created (fn [ctx] (let [new-interaction (:created-interaction ctx)]
-                              (api-common/location-response
-                                (interact-rep/url new-interaction)
-                                (interact-rep/render-interaction new-interaction :author)
-                                interact-rep/comment-media-type)))
+                              (interact-rep/render-interaction new-interaction :author)))
   :handle-unprocessable-entity (fn [ctx]
     (api-common/unprocessable-entity-response (:reason ctx))))
 
