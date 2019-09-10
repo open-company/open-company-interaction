@@ -21,7 +21,11 @@
   [conn ctx org-uuid board-uuid resource-uuid]
   (try
     ;; Create the new interaction from the data provided
-    (let [interact-map (:data ctx)]
+    (let [interact-map (:data ctx)
+          ;; Get the sender client-id from the header
+          ;; and store it in the ctx to be passed to the watcher channel later
+          ;; to skip the sender client when sending the message
+          sender-ws-client-id (get-in ctx [:request :headers "oc-interaction-client-id"])]
       (if (or (empty? (:parent-uuid interact-map))
               (interact-res/get-comment conn (:parent-uuid interact-map)))
         (let [interaction (merge interact-map {
@@ -29,7 +33,8 @@
                           :board-uuid board-uuid
                           :resource-uuid resource-uuid})
               author (:user ctx)]
-          {:new-interaction (interact-res/->comment interaction author)})
+          {:new-interaction (interact-res/->comment interaction author)
+           :new-interaction-client-id sender-ws-client-id})
         [false, {:reason "Parent comment does not exist."}]))
 
     (catch clojure.lang.ExceptionInfo e
