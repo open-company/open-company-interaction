@@ -31,7 +31,8 @@
                          :resource-uuid resource-uuid
                          :reaction reaction-unicode}
         author (:user ctx)
-        result (common/create-interaction conn {:new-interaction (interact-res/->reaction interaction-map author)}
+        result (common/create-interaction conn {:new-interaction (interact-res/->reaction interaction-map author)
+                                                :new-interaction-client-id (common/get-client-id-from-context ctx)}
                                                 reaction-count)
         new-reaction (:created-interaction result)]
     (notification/send-trigger! (notification/->trigger conn :add new-reaction

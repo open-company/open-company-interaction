@@ -25,7 +25,7 @@
           ;; Get the sender client-id from the header
           ;; and store it in the ctx to be passed to the watcher channel later
           ;; to skip the sender client when sending the message
-          sender-ws-client-id (get-in ctx [:request :headers "oc-interaction-client-id"])]
+          sender-ws-client-id (common/get-client-id-from-context ctx)]
       (if (or (empty? (:parent-uuid interact-map))
               (interact-res/get-comment conn (:parent-uuid interact-map)))
         (let [interaction (merge interact-map {
@@ -79,7 +79,7 @@
                                                           {:new updated-comment
                                                            :old existing-comment
                                                            :existing-comments (:existing-comments ctx)} (:user ctx)))
-      (watcher/notify-watcher :interaction-comment/update updated-comment)
+      (watcher/notify-watcher :interaction-comment/update updated-comment nil (common/get-client-id-from-context ctx))
       {:updated-comment updated-comment})
 
     (do (timbre/error "Failed updating comment:" comment-uuid) false)))
@@ -92,7 +92,7 @@
       (timbre/info "Deleted comment:" comment-uuid)
       (notification/send-trigger! (notification/->trigger conn :delete existing-comment
                                                           {:old existing-comment} (:user ctx)))
-      (watcher/notify-watcher :interaction-comment/delete existing-comment)
+      (watcher/notify-watcher :interaction-comment/delete existing-comment nil (common/get-client-id-from-context ctx))
       true)
     (do (timbre/info "Failed deleting comment:" comment-uuid) false)))
 
