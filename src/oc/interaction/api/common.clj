@@ -1,7 +1,6 @@
 (ns oc.interaction.api.common
   "Liberator API for comment resources."
-  (:require [clojure.core.async :refer (>!!)]
-            [if-let.core :refer (if-let* when-let*)]
+  (:require [if-let.core :refer (if-let* when-let*)]
             [taoensso.timbre :as timbre]
             [oc.lib.db.common :as db-common]
             [oc.interaction.representations.interaction :as rep]
