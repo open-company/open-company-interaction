@@ -69,7 +69,8 @@
       :plugins [
         [lein-midje "3.2.1"] ; Example-based testing https://github.com/marick/lein-midje
         [jonase/eastwood "0.3.6"] ; Linter https://github.com/jonase/eastwood
-        [lein-kibit "0.1.7"] ; Static code search for non-idiomatic code https://github.com/jonase/kibit
+        ;; NB: Skip Kibit 0.1.7 as it has a regression: https://github.com/jonase/kibit/issues/231
+        [lein-kibit "0.1.6"] ; Static code search for non-idiomatic code https://github.com/jonase/kibit
       ]
     }
 
