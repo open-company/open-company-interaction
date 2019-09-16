@@ -37,7 +37,12 @@
       (watcher/notify-watcher (if comment? :interaction-comment/add
                                            :interaction-reaction/add)
                               interaction
-                              reaction-count)
+                              reaction-count
+                              ;; Pass the client-id creating the interaction to avoid
+                              ;; resending the ws message to it
+                              (:new-interaction-client-id ctx))
+      ;; Send the a comment to the mirror for mirroring to Slack
+      (when comment? (notify-mirror conn (:user ctx) (:existing-resource ctx) interact-result))
       ;; Return the new interaction for the request context
       {:created-interaction interact-result})
     
@@ -52,3 +57,8 @@
               resource (or (db-common/read-resource conn "interactions" resource-uuid)
                            (db-common/read-resource conn "entries" resource-uuid))]
     (merge resource {:org-slug (:slug org) :board-slug (:slug board)})))
+
+;; ----- Get WS client id ----
+
+(defn get-client-id-from-context [ctx]
+  (get-in ctx [:request :headers "oc-interaction-client-id"]))
