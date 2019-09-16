@@ -172,8 +172,6 @@ A secret is shared between the Interaction service and the [Authentication servi
 
 An [AWS SQS queue](https://aws.amazon.com/sqs/) is used to pass messages to the Interaction service from Slack. Setup an SQS Queue and key/secret access to the queue using the AWS Web Console or API.
 
-You will also need to subscribe the SQS queue to the [Slack Router service](https://github.com/open-company/open-company-slack-router) SNS topic. To do this you will need to go to the AWS console and follow these instruction:
-
 Go to the AWS SQS Console and select the SQS queue configured above. From the 'Queue Actions' dropdown, select 'Subscribe Queue to SNS Topic'. Select the SNS topic you've configured your Slack Router service instance to publish to, and click the 'Subscribe' button.
 
 Make sure you update the `CHANGE-ME` items in the section of the `project.clj` that looks like this to contain your actual JWT, and AWS secrets:
@@ -188,8 +186,6 @@ Make sure you update the `CHANGE-ME` items in the section of the `project.clj` t
         :open-company-auth-passphrase "this_is_a_dev_secret" ; JWT secret
         :aws-access-key-id "CHANGE-ME"
         :aws-secret-access-key "CHANGE-ME"
-        :aws-sqs-bot-queue "CHANGE-ME"
-        :aws-sqs-slack-router-queue "CHANGE-ME"
         :aws-sns-interaction-topic-arn "" ; SNS topic to publish notifications (optional)        
         :log-level "debug"
       }
@@ -251,21 +247,12 @@ Then enter these commands one-by-one, noting the output:
                                    :reaction "👌"} author))
 ```
 
-A Slack webhook is used to mirror Slack replies to OpenCompany comments back into OpenCompany.
-
-To use the webhook from Slack with local development, you need to run the [Slack Router service](https://github.com/open-company/open-company-slack-router).
-
-You will then need to subscribe the SQS queue to the correct SNS topic.
-See the Slack Router service README.
-
 ## Technical Design
 
 The interaction service is composed of 4 main responsibilities:
 
 - CRUD of comments and reactions
 - WebSocket notifications of comment and reaction CRUD to listening clients
-- Pushing new comments to Slack
-- Receiving new comments from Slack
 - Publishing comment and reaction change notifications to interested subscribers via SNS
 
 ![Interaction Service Diagram](https://cdn.rawgit.com/open-company/open-company-interaction/mainline/docs/Interaction-Service.svg)

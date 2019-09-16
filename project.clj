@@ -25,7 +25,7 @@
     [clj-http "3.10.0"] ; HTTP client https://github.com/dakrone/clj-http
     [clj-soup/clojure-soup "0.1.3"] ; Clojure wrapper for jsoup HTML parser https://github.com/mfornos/clojure-soup
 
-    [open-company/lib "0.17.14"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    [open-company/lib "0.17.17"] ; Library for OC projects https://github.com/open-company/open-company-lib
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
@@ -83,8 +83,6 @@
         :open-company-auth-passphrase "this_is_a_dev_secret" ; JWT secret
         :aws-access-key-id "CHANGE-ME"
         :aws-secret-access-key "CHANGE-ME"
-        :aws-sqs-bot-queue "CHANGE-ME"
-        :aws-sqs-slack-router-queue "CHANGE-ME"
         :aws-sns-interaction-topic-arn "" ; SNS topic to publish notifications (optional)        
         :log-level "debug"
       }
