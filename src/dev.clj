@@ -4,8 +4,7 @@
             [oc.lib.db.pool :as pool]
             [oc.interaction.config :as c]
             [oc.interaction.app :as app]
-            [oc.interaction.components :as components]
-            [oc.interaction.async.slack-router :as slack-router]))
+            [oc.interaction.components :as components]))
 
 (defonce system nil)
 (defonce conn nil)
@@ -17,8 +16,6 @@
                              (components/interaction-system
                               {:handler-fn app/app
                                :port port
-                               :sqs-queue c/aws-sqs-slack-router-queue
-                               :slack-sqs-msg-handler slack-router/sqs-handler
                                :sqs-creds {:access-key c/aws-access-key-id
                                            :secret-key c/aws-secret-access-key}
                                })))))

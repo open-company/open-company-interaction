@@ -84,8 +84,6 @@
         :open-company-auth-passphrase "this_is_a_dev_secret" ; JWT secret
         :aws-access-key-id "CHANGE-ME"
         :aws-secret-access-key "CHANGE-ME"
-        :aws-sqs-bot-queue "CHANGE-ME"
-        :aws-sqs-slack-router-queue "CHANGE-ME"
         :aws-sns-interaction-topic-arn "" ; SNS topic to publish notifications (optional)        
         :log-level "debug"
       }

@@ -20,7 +20,6 @@
     [oc.interaction.api.comments :as comments-api]
     [oc.interaction.api.reactions :as reactions-api]
     [oc.interaction.api.websockets :as websockets-api]
-    [oc.interaction.async.slack-router :as slack-router]
     [oc.lib.middleware.wrap-ensure-origin :refer (wrap-ensure-origin)]))
 
 ;; ----- Unhandled Exceptions -----
@@ -54,8 +53,6 @@
     "Running on port: " port "\n"
     "Database: " c/db-name "\n"
     "Database pool: " c/db-pool-size "\n"
-    "AWS SQS Bot Queue: " c/aws-sqs-bot-queue "\n"
-    "AWS SQS Slack Queue: " c/aws-sqs-slack-router-queue "\n"
     "AWS SNS notification topic ARN: " c/aws-sns-interaction-topic-arn "\n"
     "Hot-reload: " c/hot-reload "\n"
     "Trace: " c/liberator-trace "\n"
@@ -90,8 +87,6 @@
   ;; Start the system
   (-> {:handler-fn app
        :port port
-       :sqs-queue c/aws-sqs-slack-router-queue
-       :slack-sqs-msg-handler slack-router/sqs-handler
        :sqs-creds {:access-key c/aws-access-key-id
                    :secret-key c/aws-secret-access-key}
        }

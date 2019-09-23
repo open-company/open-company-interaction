@@ -4,13 +4,9 @@
             [org.httpkit.server :as httpkit]
             [oc.lib.db.pool :as pool]
             [oc.lib.async.watcher :as watcher]
-            [oc.lib.sqs :as sqs]
             [oc.interaction.async.notification :as notification]
             [oc.interaction.config :as c]
-            [oc.interaction.api.websockets :as websockets-api]
-            [oc.interaction.async.slack-mirror :as slack-mirror]
-            [oc.interaction.async.usage :as usage]
-            [oc.interaction.async.slack-router :as slack-router]))
+            [oc.interaction.api.websockets :as websockets-api]))
 
 (defrecord HttpKit [options handler]
   component/Lifecycle
@@ -50,60 +46,6 @@
         (dissoc component :pool))
       component)))
 
-(defrecord SlackMirror [slack-mirror]
-  component/Lifecycle
-
-  (start [component]
-    (timbre/info "[slack-mirror] starting...")
-    (slack-mirror/start component)
-    (timbre/info "[slack-mirror] started")
-    (assoc component :slack-mirror true))
-
-  (stop [{:keys [slack-mirror] :as component}]
-    (if slack-mirror
-      (do
-        (timbre/info "[slack-mirror] stopping...")
-        (slack-mirror/stop)
-        (timbre/info "[slack-mirror] stopped")
-        (dissoc component :slack-mirror))
-      component)))
-
-(defrecord UsageReply [usage-reply]
-  component/Lifecycle
-
-  (start [component]
-    (timbre/info "[usage-reply] starting...")
-    (usage/start)
-    (timbre/info "[usage-reply] started")
-    (assoc component :usage-reply true))
-
-  (stop [{:keys [usage-reply] :as component}]
-    (if usage-reply
-      (do
-        (timbre/info "[usage-reply] stopping...")
-        (usage/stop)
-        (timbre/info "[usage-reply] stopped")
-        (dissoc component :usage-reply))
-      component)))
-
-(defrecord SlackRouter [slack-router-fn]
-  component/Lifecycle
-
-  (start [component]
-    (timbre/info "[slack-router] starting...")
-    (slack-router/start)
-    (timbre/info "[slack-router] started")
-    (assoc component :slack-router true))
-
-  (stop [{:keys [slack-router] :as component}]
-    (if slack-router
-      (do
-        (timbre/info "[slack-router] stopping...")
-        (slack-router/stop)
-        (timbre/info "[slack-router] stopped")
-        (dissoc component :slack-router))
-      component)))
-
 (defrecord AsyncConsumers []
   component/Lifecycle
 
@@ -141,22 +83,12 @@
   (component/system-map
    :db-pool (map->RethinkPool {:size c/db-pool-size :regenerate-interval 5})))
 
-(defn interaction-system [{:keys [port handler-fn sqs-creds sqs-queue slack-sqs-msg-handler] :as opts}]
+(defn interaction-system [{:keys [port handler-fn] :as opts}]
   (component/system-map
     :db-pool (map->RethinkPool {:size c/db-pool-size :regenerate-interval 5})
     :async-consumers (component/using
                         (map->AsyncConsumers {})
                         [])
-    :slack-router (component/using
-                   (map->SlackRouter {:slack-router-fn slack-sqs-msg-handler})
-                   [])
-    :sqs (sqs/sqs-listener sqs-creds sqs-queue slack-sqs-msg-handler)
-    :usage-reply (component/using
-                    (map->UsageReply {})
-                    [])
-    :slack-mirror (component/using
-                    (map->SlackMirror {})
-                    [:db-pool])
     :handler (component/using
                 (map->Handler {:handler-fn handler-fn})
                 [:db-pool])
