@@ -2,6 +2,7 @@
   "Liberator API for comment resources."
   (:require [if-let.core :refer (if-let* when-let*)]
             [taoensso.timbre :as timbre]
+            [oc.lib.html :as lib-html]
             [oc.lib.db.common :as db-common]
             [oc.interaction.representations.interaction :as rep]
             [oc.interaction.resources.interaction :as interact-res]
@@ -10,6 +11,12 @@
 ;; ----- DB Persistence -----
 
 (def board-table-name "boards")
+
+;; ----- Transformations -----
+
+(defn transform-comment
+  [comment-data]
+  (update comment-data :body lib-html/sanitize-html))
 
 ;; ----- Actions -----
 
@@ -23,7 +30,7 @@
   (timbre/info "Creating interaction.")
   (if-let* [new-interaction (:new-interaction ctx)
             interact-result (if (:body new-interaction)
-                              (interact-res/create-comment! conn new-interaction) ; Create the comment
+                              (interact-res/create-comment! conn (transform-comment new-interaction)) ; Create the comment
                               (interact-res/create-reaction! conn new-interaction))] ; Create the reaction
     ;; Interaction creation succeeded
     (let [uuid (:uuid interact-result)
