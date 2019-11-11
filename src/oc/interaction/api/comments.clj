@@ -80,7 +80,7 @@
                                                            :old existing-comment
                                                            :existing-comments (:existing-comments ctx)} (:user ctx)))
       (watcher/notify-watcher :interaction-comment/update updated-comment nil (common/get-client-id-from-context ctx))
-      {:updated-comment updated-comment})
+      {:updated-comment (common/transform-comment updated-comment)})
 
     (do (timbre/error "Failed updating comment:" comment-uuid) false)))
 
