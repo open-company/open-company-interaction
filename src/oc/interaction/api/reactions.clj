@@ -32,7 +32,7 @@
                          :reaction reaction-unicode}
         author (:user ctx)
         result (common/create-interaction conn {:new-interaction (interact-res/->reaction interaction-map author)
-                                                :new-interaction-client-id (common/get-client-id-from-context ctx)}
+                                                :new-interaction-client-id (api-common/get-interaction-client-id ctx)}
                                                 reaction-count)
         new-reaction (:created-interaction result)]
     (notification/send-trigger! (notification/->trigger conn :add new-reaction

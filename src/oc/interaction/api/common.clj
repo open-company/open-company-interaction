@@ -61,8 +61,3 @@
               resource (or (db-common/read-resource conn "interactions" resource-uuid)
                            (db-common/read-resource conn "entries" resource-uuid))]
     (merge resource {:org-slug (:slug org) :board-slug (:slug board)})))
-
-;; ----- Get WS client id ----
-
-(defn get-client-id-from-context [ctx]
-  (get-in ctx [:request :headers "oc-interaction-client-id"]))
