@@ -15,7 +15,7 @@
   :dependencies [
     [org.clojure/clojure "1.10.1"] ; Lisp on the JVM http://clojure.org/documentation
     [org.clojure/core.cache "0.8.2"] ; Clojure in-memory caching https://github.com/clojure/core.cache
-    [org.clojure/tools.cli "0.4.2"] ; Command-line parsing https://github.com/clojure/tools.cli
+    [org.clojure/tools.cli "1.0.194"] ; Command-line parsing https://github.com/clojure/tools.cli
     [ring/ring-devel "1.8.0"] ; Web application library https://github.com/ring-clojure/ring
     [ring/ring-core "1.8.0"] ; Web application library https://github.com/ring-clojure/ring
     [ring/ring-json "0.5.0" :exclusions [cheshire]] ; JSON request/response https://github.com/ring-clojure/ring-json
@@ -90,7 +90,7 @@
       :plugins [
         [lein-bikeshed "0.5.2"] ; Check for code smells https://github.com/dakrone/lein-bikeshed
         [lein-checkall "0.1.1"] ; Runs bikeshed, kibit and eastwood https://github.com/itang/lein-checkall
-        [lein-pprint "1.2.0"] ; pretty-print the lein project map https://github.com/technomancy/leiningen/tree/master/lein-pprint
+        [lein-pprint "1.3.2"] ; pretty-print the lein project map https://github.com/technomancy/leiningen/tree/master/lein-pprint
         [lein-ancient "0.6.15"] ; Check for outdated dependencies https://github.com/xsc/lein-ancient
         [lein-spell "0.1.0"] ; Catch spelling mistakes in docs and docstrings https://github.com/cldwalker/lein-spell
         [lein-deps-tree "0.1.2"] ; Print a tree of project dependencies https://github.com/the-kenny/lein-deps-tree
