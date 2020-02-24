@@ -137,6 +137,20 @@
   {:pre [(db-common/conn? conn)]}
   (get-interaction conn uuid))
 
+(schema/defn ^:always-validate get-comment-children :- [(schema/maybe Comment)]
+  "Given the UUID of a comment, return the comments that have it as parent-uuid."
+  [conn parent-uuid :- lib-schema/UniqueID]
+  {:pre [(db-common/conn? conn)]}
+  (db-common/read-resources conn table-name "parent-uuid" parent-uuid))
+
+(schema/defn ^:always-validate get-comment-thread :- [(schema/maybe Comment)]
+  "Given the UUID of a comment, return the comment and all its children."
+  [conn uuid :- lib-schema/UniqueID]
+  {:pre [(db-common/conn? conn)]}
+  (vec (remove nil?
+   (concat [(get-comment conn uuid)]
+    (get-comment-children conn uuid)))))
+
 (schema/defn ^:always-validate update-interaction! :- (schema/maybe (schema/either Comment Reaction))
   "
   Given the interaction's UUID and an updated interaction property map, update the interaction
@@ -159,6 +173,12 @@
   [conn uuid :- lib-schema/UniqueID]
   {:pre [(db-common/conn? conn)]}
   (db-common/delete-resource conn table-name uuid))
+
+(schema/defn ^:always-validate delete-comment-thread!
+  [conn uuid :- lib-schema/UniqueID]
+  {:pre [(db-common/conn? conn)]}
+  (db-common/delete-resource conn table-name uuid)
+  (db-common/delete-resource conn table-name :parent-uuid uuid))
 
 ;; ----- Collection of interactions -----
 

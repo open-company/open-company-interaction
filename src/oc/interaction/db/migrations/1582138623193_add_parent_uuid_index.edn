@@ -1,0 +1,8 @@
+(ns oc.interaction.db.migrations.add-parent-uuid-index
+  (:require [rethinkdb.query :as r]
+            [oc.lib.db.migrations :as m]
+            [oc.interaction.resources.interaction :as interaction]))
+
+(defn up [conn]
+  (println (m/create-index conn interaction/table-name "parent-uuid"))
+  true) ; return true on success

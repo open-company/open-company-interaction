@@ -86,13 +86,14 @@
 
 (defn- delete-comment [conn ctx comment-uuid]
   (timbre/info "Deleting comment:" comment-uuid)
-  (if-let* [existing-comment (:existing-comment ctx)
-            _delete-result (interact-res/delete-interaction! conn comment-uuid)]
+  (if-let* [existing-thread (:existing-comment-thread ctx)
+            _delete-result (interact-res/delete-comment-thread! conn comment-uuid)]
     (do 
       (timbre/info "Deleted comment:" comment-uuid)
-      (notification/send-trigger! (notification/->trigger conn :delete existing-comment
-                                                          {:old existing-comment} (:user ctx)))
-      (watcher/notify-watcher :interaction-comment/delete existing-comment nil (api-common/get-interaction-client-id ctx))
+      (doseq [comment existing-thread]
+        (notification/send-trigger! (notification/->trigger conn :delete comment
+                                                            {:old comment} (:user ctx)))
+        (watcher/notify-watcher :interaction-comment/delete comment nil (api-common/get-interaction-client-id ctx)))
       true)
     (do (timbre/info "Failed deleting comment:" comment-uuid) false)))
 
@@ -128,10 +129,13 @@
                                          (common/resource-exists? conn org-uuid board-uuid resource-uuid))
                                existing-comment (or (:existing-comment ctx)
                                                     (interact-res/get-interaction conn comment-uuid))
+                               existing-comment-thread (or (:existing-thread ctx)
+                                                           (interact-res/get-comment-thread conn comment-uuid))
                                _matches? (and (= (:org-uuid existing-comment) org-uuid)
                                               (= (:board-uuid existing-comment) board-uuid)
                                               (= (:resource-uuid existing-comment) resource-uuid))]
-                        {:existing-resource resource :existing-comment existing-comment :existing? true}
+                        {:existing-resource resource :existing-comment existing-comment 
+                         :existing-comment-thread existing-comment-thread :existing? true}
                         false))
 
   ;; Actions
