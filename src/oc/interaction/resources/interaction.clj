@@ -58,7 +58,9 @@
     (-> interaction-props
         keywordize-keys
         clean
-        (assoc :uuid (db-common/unique-id))
+        (assoc :uuid (if (seq (:uuid interaction-props))
+                       (:uuid interaction-props)
+                       (db-common/unique-id)))
         (assoc :author (lib-schema/author-for-user user))
         (assoc :created-at ts)
         (assoc :updated-at ts))))
