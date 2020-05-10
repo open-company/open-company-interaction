@@ -50,6 +50,7 @@
   {:notification-type (schema/pred notification-type?)
    :resource-type (schema/pred resource-type?)
    :uuid lib-schema/UniqueID
+   (schema/optional-key :parent-uuid) (schema/maybe lib-schema/UniqueID)
    (schema/optional-key :secure-uuid) lib-schema/UniqueID
    :org-uuid lib-schema/UniqueID
    :org {schema/Any schema/Any}
@@ -138,6 +139,7 @@
         trigger {:notification-type notification-type
                  :resource-type resource-type
                  :uuid (:uuid interaction)
+                 :parent-uuid (:parent-uuid interaction)
                  :org-uuid (:org-uuid interaction)
                  :org org
                  :board-uuid (:board-uuid interaction)
