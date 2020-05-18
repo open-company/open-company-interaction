@@ -70,7 +70,7 @@
     true              wrap-params
     c/liberator-trace (wrap-trace :header :ui)
     true              (wrap-cors #".*")
-    c/ensure-origin   wrap-ensure-origin
+    c/ensure-origin   (wrap-ensure-origin c/ui-server-url)
     c/hot-reload      wrap-reload))
 
 (defn start

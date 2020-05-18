@@ -25,7 +25,7 @@
     [clj-http "3.10.0"] ; HTTP client https://github.com/dakrone/clj-http
     [clj-soup/clojure-soup "0.1.3"] ; Clojure wrapper for jsoup HTML parser https://github.com/mfornos/clojure-soup
 
-    [open-company/lib "0.17.25.3"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    [open-company/lib "0.17.29-alpha14"] ; Library for OC projects https://github.com/open-company/open-company-lib
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
@@ -80,7 +80,7 @@
         :db-name "open_company_storage_dev"
         :liberator-trace "true" ; liberator debug data in HTTP response headers
         :hot-reload "true" ; reload code when changed on the file system
-        :oc-ws-ensure-origin "false" ; local
+        :oc-ws-ensure-origin "true" ; local
         :open-company-auth-passphrase "this_is_a_dev_secret" ; JWT secret
         :aws-access-key-id "CHANGE-ME"
         :aws-secret-access-key "CHANGE-ME"
@@ -146,8 +146,9 @@
     "build" ["do" "clean," "deps," "compile"] ; clean and build code
     "create-migration" ["run" "-m" "oc.interaction.db.migrations" "create"] ; create a data migration
     "migrate-db" ["run" "-m" "oc.interaction.db.migrations" "migrate"] ; run pending data migrations
-    "start" ["do" "migrate-db," "run"] ; start a development server
-    "start!" ["with-profile" "prod" "do" "start"] ; start a server in production
+    "start*" ["do" "migrate-db," "run"] ; start the service
+    "start" ["with-profile" "dev" "do" "start*"] ; start a development server
+    "start!" ["with-profile" "prod" "do" "start*"] ; start a server in production
     "autotest" ["with-profile" "qa" "do" "migrate-db," "midje" ":autotest"] ; watch for code changes and run affected tests
     "test!" ["with-profile" "qa" "do" "clean," "build," "migrate-db," "midje"] ; build, init the DB and run all tests
     "repl" ["with-profile" "+repl-config" "repl"]
