@@ -4,7 +4,7 @@
             [oc.interaction.resources.interaction :as inter-res]))
 
 (defn up [conn]
-  (println (m/remove-index conn inter-res/table-name "resource-uuid-comment"))
+  (println (m/remove-index conn inter-res/table-name :resource-uuid-comment))
   (println (m/create-compound-index conn inter-res/table-name :resource-uuid-comment
             (r/fn [row]
               [(r/get-field row :resource-uuid)
