@@ -10,7 +10,7 @@
               [(r/get-field row :resource-uuid)
                (-> (r/get-field row :body) seq boolean)])))
   (println "Create created-at index...")
-  (println (m/create-compound-index conn inter-rest/table-name :created-at
+  (println (m/create-compound-index conn inter-res/table-name :created-at
             (r/fn [row]
               (r/get-field row :created-at))))
   true) ; return true on success
