@@ -67,3 +67,7 @@
 ;; ----- Slack -----
 
 (defonce slack-verification-token (env :open-company-slack-verification-token))
+
+;; ----- Comment replies -----
+
+(defonce enable-comment-replies? (env :oc-comment-replies))

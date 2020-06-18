@@ -54,17 +54,30 @@
   ([reaction-url true] (hateoas/link-map "react" hateoas/DELETE reaction-url {}))
   ([reaction-url false] (hateoas/link-map "react" hateoas/PUT reaction-url {:accept reaction-media-type})))
 
+(defn- reply-link
+  [comment-url]
+  (hateoas/link-map "reply" hateoas/POST comment-url {:content-type comment-media-type
+                                                      :accept comment-media-type}))
+
 (defn- interaction-links
   [interaction access-level]
   (let [links (if (= access-level :author)
-                  [(update-link interaction) (delete-link interaction)]
-                  ;; if the user didn't author this interaction then we're building this to pass along
-                  ;; to some other board watching user, so we know they have reaction access, but don't
-                  ;; know if they've used this reaction or not, so we provide both links
-                  [(reaction-link (url interaction) true) (reaction-link (url interaction) false)])]
+                [(update-link interaction) (delete-link interaction)]
+                ;; if the user didn't author this interaction then we're building this to pass along
+                ;; to some other board watching user, so we know they have reaction access, but don't
+                ;; know if they've used this reaction or not, so we provide both links
+                [(reaction-link (url interaction) true) (reaction-link (url interaction) false)])
+        comment-reply-link (when (and config/enable-comment-replies?
+                                      (:body interaction)
+                                      (not (:parent-uuid interaction)))
+                             (reply-link (url interaction)))]
     (assoc interaction :links
      (if (:body interaction)
-      (conj links (reaction-link (url (assoc interaction :comment-react true))))
+      (concat links
+        (vec
+         (remove nil?
+          [(reaction-link (url (assoc interaction :comment-react true)))
+           comment-reply-link])))
       links))))
 
 (defn- access

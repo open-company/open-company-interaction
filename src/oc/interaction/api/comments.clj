@@ -55,6 +55,28 @@
     
     true)) ; no existing comment, so this will fail existence check later
 
+(defn- valid-comment-reply? [conn ctx comment-uuid comment-props org-uuid board-uuid resource-uuid]
+  (if-let [existing-comment (or (:existing-comment ctx) (interact-res/get-interaction conn comment-uuid))]
+    ;; Merge the existing comment with the new updates
+    (let [interact-map (:data ctx)
+          new-interaction (merge interact-map {
+                            :org-uuid org-uuid
+                            :board-uuid board-uuid
+                            :resource-uuid resource-uuid})
+          sender-ws-client-id (api-common/get-interaction-client-id ctx)]
+      (if (and (lib-schema/valid? interact-res/Comment new-interactoin)
+               ;; If parent-uuid is passed make sure it's not different
+               (and (contains? new-interaction :parent-uuid)
+                    ;; Using str to avoid errors like "" not equal to nil
+                    (= (str (:parent-uuid new-interaction)) (str (:parent-uuid existing-comment)))
+                    (not (:parent-uuid existing-comment))))
+        {:existing-comment existing-comment
+         :new-interaction (interact-res/->comment new-interaction author)
+         :new-interaction-client-id sender-ws-client-id}
+        [false, {:new-interaction new-interaction}])) ; invalid update
+    
+    true)) ; no existing comment, so this will fail existence check later
+
 (defn author-match?
   "Determine if the comment specified by the UUID was authored by the current user."
   [conn ctx comment-uuid]
@@ -103,7 +125,7 @@
 (defresource comment-item [conn org-uuid board-uuid resource-uuid comment-uuid]
   (api-common/open-company-id-token-resource config/passphrase) ; verify validity and presence of required JWToken
 
-  :allowed-methods [:options :patch :delete]
+  :allowed-methods [:options :post :patch :delete]
 
   ;; Media type client accepts
   :available-media-types [interact-rep/comment-media-type]
@@ -112,15 +134,22 @@
   ;; Media type client sends
   :known-content-type? (by-method {
     :options true
+    :post (fn [ctx] (api-common/known-content-type? ctx interact-rep/comment-media-type))
     :patch (fn [ctx] (api-common/known-content-type? ctx interact-rep/comment-media-type))
     :delete true})
 
   ;; Authorization
-  :allowed? (fn [ctx] (author-match? conn ctx comment-uuid))
+  :allowed? (by-method {
+    :options true
+    :patch (fn [ctx] (author-match? conn ctx comment-uuid))
+    :delete (fn [ctx] (author-match? conn ctx comment-uuid))
+    :post true ;; Everyone who has access to a comment can reply
+    })
 
   ;; Validations
   :processable? (by-method {
     :options true
+    :post (fn [ctx] (valid-comment-reply? conn ctx comment-uuid (:data ctx)))
     :patch (fn [ctx] (valid-comment-update? conn ctx comment-uuid (:data ctx)))
     :delete true})
 
@@ -141,9 +170,19 @@
   ;; Actions
   :patch! (fn [ctx] (when (:existing? ctx) (update-comment conn ctx comment-uuid)))
   :delete! (fn [ctx] (when (:existing? ctx) (delete-comment conn ctx comment-uuid)))
+  :post! (fn [ctx] (when (:existing? ctx)
+                     (let [result (common/create-interaction conn ctx)
+                           new-comment (:created-interaction result)]
+                       (notification/send-trigger! (notification/->trigger conn :add new-comment
+                                                    {:new new-comment
+                                                     :existing-comments (:existing-comments ctx)
+                                                     :existing-resource (:existing-resource ctx)}
+                                                    (:user ctx)))
+                       result))
 
   ;; Responses
   :handle-ok (fn [ctx] (interact-rep/render-interaction (:updated-comment ctx) :author))
+  :handle-created (fn [ctx] (interact-rep/render-interaction (:created-interaction ctx) :author))
   :handle-no-content (fn [ctx] (when-not (:existing? ctx) (api-common/missing-response))))
 
 ;; A resource for operations on a list of comments
