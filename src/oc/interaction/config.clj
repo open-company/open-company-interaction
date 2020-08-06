@@ -51,7 +51,7 @@
 ;; ----- URLs -----
 
 (defonce ui-server-url (or (env :ui-server-url) "http://localhost:3559"))
-(defonce web-cdn-url (or (env :web-cdn-url) "https://do64qbk3yqbc.cloudfront.net"))
+(defonce web-cdn-url (or (env :web-cdn-url) "https://d16anbmiggbhpz.cloudfront.net"))
 
 ;; ----- AWS SQS / SNS -----
 
