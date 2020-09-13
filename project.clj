@@ -25,7 +25,10 @@
     [clj-http "3.10.0"] ; HTTP client https://github.com/dakrone/clj-http
     [clj-soup/clojure-soup "0.1.3"] ; Clojure wrapper for jsoup HTML parser https://github.com/mfornos/clojure-soup
 
-    [open-company/lib "0.17.29-alpha14"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    [open-company/lib "0.17.29-alpha36" :exclusions [clj-http
+                                                     org.clojure/data.json
+                                                     org.clojure/tools.logging
+                                                     org.bouncycastle/bcpkix-jdk15on]]
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async

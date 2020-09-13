@@ -64,7 +64,9 @@
 ;; Ring app definition
 (defn app [sys]
   (cond-> (routes sys)
-    c/dsn             (sentry-mw/wrap-sentry c/dsn) ; important that this is first
+    ; important that this is first
+    c/dsn             (sentry-mw/wrap-sentry c/dsn {:environment c/sentry-env
+                                                    :release c/sentry-release})
     c/prod?           wrap-with-logger
     true              wrap-keyword-params
     true              wrap-params
