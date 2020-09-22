@@ -1,6 +1,7 @@
 (ns oc.interaction.components
   (:require [com.stuartsierra.component :as component]
             [taoensso.timbre :as timbre]
+            [oc.lib.sentry.core :refer (map->SentryCapturer)]
             [org.httpkit.server :as httpkit]
             [oc.lib.db.pool :as pool]
             [oc.lib.async.watcher :as watcher]
@@ -83,12 +84,15 @@
   (component/system-map
    :db-pool (map->RethinkPool {:size c/db-pool-size :regenerate-interval 5})))
 
-(defn interaction-system [{:keys [port handler-fn] :as opts}]
+(defn interaction-system [{:keys [port handler-fn sentry] :as opts}]
   (component/system-map
-    :db-pool (map->RethinkPool {:size c/db-pool-size :regenerate-interval 5})
+    :sentry-capturer (map->SentryCapturer sentry)
+    :db-pool (component/using
+              (map->RethinkPool {:size c/db-pool-size :regenerate-interval 5})
+              [:sentry-capturer])
     :async-consumers (component/using
                         (map->AsyncConsumers {})
-                        [])
+                        [:sentry-capturer])
     :handler (component/using
                 (map->Handler {:handler-fn handler-fn})
                 [:db-pool])
