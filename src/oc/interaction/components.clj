@@ -25,7 +25,7 @@
         (http-kit)
         (websockets-api/stop)
         (timbre/info "[http] stopped")
-        (dissoc component :http-kit))
+        (assoc component :http-kit nil))
       component)))
 
 (defrecord RethinkPool [size regenerate-interval]
@@ -44,7 +44,7 @@
         (timbre/info "[rethinkdb-pool] stopping...")
         (pool/shutdown-pool! pool)
         (timbre/info "[rethinkdb-pool] stopped")
-        (dissoc component :pool))
+        (assoc component :pool nil))
       component)))
 
 (defrecord AsyncConsumers []
@@ -62,7 +62,7 @@
         (timbre/info "[async-consumers] stopping")
         (notification/stop) ; core.async channel consumer for notification events
         (timbre/info "[async-consumers] stopped")
-        (dissoc component :async-consumers))
+        (assoc component :async-consumers nil))
     component)))
 
 (defrecord Handler [handler-fn]
@@ -78,7 +78,7 @@
     (timbre/info "[handler] stopping...")
     (watcher/stop) ; core.async channel consumer for watched items (boards watched by websockets) events
     (timbre/info "[handler] stopped")
-    (dissoc component :handler)))
+    (assoc component :handler nil)))
 
 (defn db-only-interaction-system [_opts]
   (component/system-map
