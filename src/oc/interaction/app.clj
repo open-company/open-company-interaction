@@ -53,7 +53,7 @@
 (defn app [sys]
   (cond-> (routes sys)
     ; important that this is first
-    c/dsn             (sentry/wrap sys)
+    c/dsn             (sentry/wrap c/sentry-config)
     c/prod?           wrap-with-logger
     true              wrap-keyword-params
     true              wrap-params
