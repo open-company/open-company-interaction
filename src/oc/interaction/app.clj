@@ -78,8 +78,7 @@
        :handler-fn app
        :port port
        :sqs-creds {:access-key c/aws-access-key-id
-                   :secret-key c/aws-secret-access-key}
-       }
+                   :secret-key c/aws-secret-access-key}}
     components/interaction-system
     component/start)
 
