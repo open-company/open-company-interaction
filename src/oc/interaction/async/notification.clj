@@ -32,6 +32,11 @@
 
 (defn- resource-type? [resource-type] (#{:reaction :comment} resource-type))
 
+(defn- allowed-users-pred [users]
+  (or (= users "all")
+      (and (sequential? users)
+           (every? lib-schema/unique-id? users))))
+
 (def NotificationTrigger
   "
   A trigger for one of the various types of notifications that are published:
@@ -55,11 +60,12 @@
    :org-uuid lib-schema/UniqueID
    :org {schema/Any schema/Any}
    :board-uuid lib-schema/UniqueID
+   (schema/optional-key :allowed-users) (schema/pred allowed-users-pred)
    :content {
-    (schema/optional-key :new) (schema/conditional #(= (resource-type %) :comment) interact-res/Comment
-                                                   :else interact-res/Reaction)
-    (schema/optional-key :old) (schema/conditional #(= (resource-type %) :comment) interact-res/Comment
-                                                   :else interact-res/Reaction)}
+             (schema/optional-key :new) (schema/conditional #(= (resource-type %) :comment) interact-res/Comment
+                                                            :else interact-res/Reaction)
+             (schema/optional-key :old) (schema/conditional #(= (resource-type %) :comment) interact-res/Comment
+                                                            :else interact-res/Reaction)}
    :user lib-schema/User
    :item-publisher lib-schema/User
    :notification-at lib-schema/ISO8601
@@ -109,11 +115,18 @@
                  (db-common/read-resource conn "interactions" resource-uuid)) ; for comment reaction
         comment-reaction? (if (:resource-uuid item) true false)
         org-uuid (:org-uuid interaction)
+        board-uuid (:board-uuid interaction)
         resource-type (resource-type interaction)
         org (first (db-common/read-resources conn "orgs" "uuid" org-uuid))
+        board (first (db-common/read-resources conn "boards" "uuid" board-uuid))
         ;; Notify other users involved in the discussion
         should-notify-other-users? (and (= notification-type :add)
                                         (= resource-type :comment))
+        ;; Allowed users
+        allowed-users (when (map? board)
+                        (if (= (:access board) "private")
+                          (concat (:viewers board) (:authors board))
+                          "all"))
         resource (when should-notify-other-users?
                    (:existing-resource content))
         resource-comments (when should-notify-other-users?
@@ -143,6 +156,7 @@
                  :org-uuid (:org-uuid interaction)
                  :org org
                  :board-uuid (:board-uuid interaction)
+                 :allowed-users allowed-users
                  :content cleaned-content
                  :user user
                  :notify-users involved-distinct-users
