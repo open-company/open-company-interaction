@@ -32,11 +32,6 @@
 
 (defn- resource-type? [resource-type] (#{:reaction :comment} resource-type))
 
-(defn- allowed-users-pred [users]
-  (or (= users "all")
-      (and (sequential? users)
-           (every? lib-schema/unique-id? users))))
-
 (def NotificationTrigger
   "
   A trigger for one of the various types of notifications that are published:
@@ -60,7 +55,8 @@
    :org-uuid lib-schema/UniqueID
    :org {schema/Any schema/Any}
    :board-uuid lib-schema/UniqueID
-   (schema/optional-key :allowed-users) (schema/pred allowed-users-pred)
+   :board-access lib-schema/NonBlankStr
+   (schema/optional-key :allowed-users) (schema/maybe [lib-schema/UniqueID])
    :content {
              (schema/optional-key :new) (schema/conditional #(= (resource-type %) :comment) interact-res/Comment
                                                             :else interact-res/Reaction)
@@ -119,14 +115,14 @@
         resource-type (resource-type interaction)
         org (first (db-common/read-resources conn "orgs" "uuid" org-uuid))
         board (first (db-common/read-resources conn "boards" "uuid" board-uuid))
+        board-access (:access board)
         ;; Notify other users involved in the discussion
         should-notify-other-users? (and (= notification-type :add)
                                         (= resource-type :comment))
-        ;; Allowed users
-        allowed-users (when (map? board)
-                        (if (= (:access board) "private")
-                          (concat (:viewers board) (:authors board))
-                          "all"))
+        ;; Allowed users: return a sequence only if board is private, else nil
+        allowed-users (when (and (map? board)
+                                 (= board-access "private"))
+                        (vec (concat (:viewers board) (:authors board))))
         resource (when should-notify-other-users?
                    (:existing-resource content))
         resource-comments (when should-notify-other-users?
@@ -156,6 +152,7 @@
                  :org-uuid (:org-uuid interaction)
                  :org org
                  :board-uuid (:board-uuid interaction)
+                 :board-access board-access
                  :allowed-users allowed-users
                  :content cleaned-content
                  :user user
