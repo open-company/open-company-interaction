@@ -13,19 +13,19 @@
 
   ;; All profile dependencies
   :dependencies [
-    [org.clojure/clojure "1.10.2-alpha1"] ; Lisp on the JVM http://clojure.org/documentation
-    [org.clojure/core.cache "0.8.2"] ; Clojure in-memory caching https://github.com/clojure/core.cache
+    [org.clojure/clojure "1.10.2-alpha3"] ; Lisp on the JVM http://clojure.org/documentation
+    [org.clojure/core.cache "1.0.207"] ; Clojure in-memory caching https://github.com/clojure/core.cache
     [org.clojure/tools.cli "1.0.194"] ; Command-line parsing https://github.com/clojure/tools.cli
-    [ring/ring-devel "1.8.0"] ; Web application library https://github.com/ring-clojure/ring
-    [ring/ring-core "1.8.0"] ; Web application library https://github.com/ring-clojure/ring
+    [ring/ring-devel "2.0.0-alpha-1"] ; Web application library https://github.com/ring-clojure/ring
+    [ring/ring-core "2.0.0-alpha1"] ; Web application library https://github.com/ring-clojure/ring
     [ring/ring-json "0.5.0" :exclusions [cheshire]] ; JSON request/response https://github.com/ring-clojure/ring-json
     [jumblerg/ring.middleware.cors "1.0.1"] ; CORS library https://github.com/jumblerg/ring.middleware.cors
     [ring-logger-timbre "0.7.6" :exclusions [com.taoensso/encore]] ; Ring logging https://github.com/nberger/ring-logger-timbre
-    [compojure "1.6.1"] ; Web routing https://github.com/weavejester/compojure
-    [clj-http "3.10.0"] ; HTTP client https://github.com/dakrone/clj-http
+    [compojure "1.6.2"] ; Web routing https://github.com/weavejester/compojure
+    [clj-http "3.10.3"] ; HTTP client https://github.com/dakrone/clj-http
     [clj-soup/clojure-soup "0.1.3"] ; Clojure wrapper for jsoup HTML parser https://github.com/mfornos/clojure-soup
 
-    [open-company/lib "0.17.29-alpha45" :exclusions [clj-http]]
+    [open-company/lib "0.17.29-alpha52" :exclusions [riddley org.jsoup/jsoup commons-codec clj-http org.apache.httpcomponents/httpclient org.clojure/tools.logging]]
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
@@ -48,7 +48,7 @@
   ;; All profile plugins
   :plugins [
     [lein-ring "0.12.5"] ; Common ring tasks https://github.com/weavejester/lein-ring
-    [lein-environ "1.1.0"] ; Get environment settings from different sources https://github.com/weavejester/environ
+    [lein-environ "1.2.0"] ; Get environment settings from different sources https://github.com/weavejester/environ
   ]
 
   :profiles {
