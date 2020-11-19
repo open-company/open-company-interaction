@@ -25,7 +25,14 @@
     [clj-http "3.10.3"] ; HTTP client https://github.com/dakrone/clj-http
     [clj-soup/clojure-soup "0.1.3"] ; Clojure wrapper for jsoup HTML parser https://github.com/mfornos/clojure-soup
 
-    [open-company/lib "0.17.29-alpha52" :exclusions [riddley org.jsoup/jsoup commons-codec clj-http org.apache.httpcomponents/httpclient org.clojure/tools.logging]]
+    ;; Library for OC projects https://github.com/open-company/open-company-lib
+    ;; ************************************************************************
+    ;; ****************** NB: don't go under 0.17.29-alpha56 ******************
+    ;; ***************** (JWT schema changes, more info here: *****************
+    ;; ******* https://github.com/open-company/open-company-lib/pull/82) ******
+    ;; ************************************************************************
+    [open-company/lib "0.17.29-alpha56" :exclusions [riddley org.jsoup/jsoup commons-codec clj-http org.apache.httpcomponents/httpclient org.clojure/tools.logging]]
+    ;; ************************************************************************
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
