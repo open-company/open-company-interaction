@@ -10,6 +10,7 @@
             [oc.lib.db.common :as db-common]
             [oc.lib.schema :as lib-schema]
             [oc.lib.time :as oc-time]
+            [oc.lib.sentry.core :as sentry]
             [oc.interaction.config :as config]
             [oc.interaction.resources.interaction :as interact-res]))
 
@@ -65,6 +66,7 @@
    :user lib-schema/User
    :item-publisher lib-schema/User
    :notification-at lib-schema/ISO8601
+   (schema/optional-key :author-wants-follow?) (schema/maybe schema/Bool)
    (schema/optional-key :notify-users) [lib-schema/Author]})
 
 ;; ----- Event handling -----
@@ -101,11 +103,14 @@
           (try
             (handle-notification-message message)
           (catch Exception e
-            (timbre/error e)))))))))
+            (timbre/warn e)
+            (sentry/capture {:throwable e :message (str "Error processing message on notifications loop: " e) :extra {:message message}})))))))))
 
 ;; ----- Notification triggering -----
 
-(defn ->trigger [conn notification-type interaction content user]
+(defn ->trigger
+  ([conn notification-type interaction content user] (->trigger conn notification-type interaction content user true))
+  ([conn notification-type interaction content user author-wants-follow?]
   (let [resource-uuid (or (-> content :new :resource-uuid) (-> content :old :resource-uuid))
         item (or (db-common/read-resource conn "entries" resource-uuid) ; for post reaction or comment
                  (db-common/read-resource conn "interactions" resource-uuid)) ; for comment reaction
@@ -123,8 +128,6 @@
         allowed-users (when (and (map? board)
                                  (= board-access "private"))
                         (vec (concat (:viewers board) (:authors board))))
-        resource (when should-notify-other-users?
-                   (:existing-resource content))
         resource-comments (when should-notify-other-users?
                             (:existing-comments content))
         all-authors (when should-notify-other-users?
@@ -156,12 +159,13 @@
                  :allowed-users allowed-users
                  :content cleaned-content
                  :user user
+                 :author-wants-follow? author-wants-follow?
                  :notify-users involved-distinct-users
                  :item-publisher (if comment-reaction?
                                     (:author item) ; author of the comment
                                     (:publisher item)) ; publisher of the entry (interactions only occur on published entries)
                  :notification-at (oc-time/current-timestamp)}]
-    (if comment-reaction? trigger (assoc trigger :secure-uuid (:secure-uuid item)))))
+    (if comment-reaction? trigger (assoc trigger :secure-uuid (:secure-uuid item))))))
 
 (schema/defn ^:always-validate send-trigger! [trigger :- NotificationTrigger]
   (if (clojure.string/blank? config/aws-sns-interaction-topic-arn)

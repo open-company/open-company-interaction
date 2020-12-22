@@ -21,7 +21,9 @@
   [conn ctx org-uuid board-uuid resource-uuid]
   (try
     ;; Create the new interaction from the data provided
-    (let [interact-map (:data ctx)
+    (let [interact-map* (:data ctx)
+          author-wants-follow? (:author-wants-follow? interact-map*)
+          interact-map (dissoc interact-map* :author-wants-follow?)
           ;; Get the sender client-id from the header
           ;; and store it in the ctx to be passed to the watcher channel later
           ;; to skip the sender client when sending the message
@@ -34,6 +36,7 @@
                           :resource-uuid resource-uuid})
               author (:user ctx)]
           {:new-interaction (interact-res/->comment interaction author)
+           :author-wants-follow? author-wants-follow?
            :new-interaction-client-id sender-ws-client-id})
         [false, {:reason "Parent comment does not exist."}]))
 
@@ -177,7 +180,7 @@
     :post (fn [ctx] (valid-new-comment? conn ctx org-uuid board-uuid resource-uuid))})
 
   ;; Existentialism
-  :exists? (fn [ctx] (if-let [resource (common/resource-exists? conn org-uuid board-uuid resource-uuid)]
+  :exists? (fn [_] (if-let [resource (common/resource-exists? conn org-uuid board-uuid resource-uuid)]
                         (let [comments (interact-res/get-comments-by-resource conn resource-uuid)]
                           {:existing-resource resource :existing-comments comments})
                         false))
@@ -185,12 +188,13 @@
   ;; Actions
   :post! (fn [ctx] (let [result (common/create-interaction conn ctx)
                          new-comment (:created-interaction result)]
-                      (notification/send-trigger! (notification/->trigger conn :add new-comment
-                                                        {:new new-comment
-                                                         :existing-comments (:existing-comments ctx)
-                                                         :existing-resource (:existing-resource ctx)}
-                                                        (:user ctx)))
-                      result))
+                     (notification/send-trigger! (notification/->trigger conn :add new-comment
+                                                                         {:new new-comment
+                                                                          :existing-comments (:existing-comments ctx)
+                                                                          :existing-resource (:existing-resource ctx)}
+                                                                         (:user ctx)
+                                                                         (:author-wants-follow? ctx)))
+                     result))
 
   ;; Responses
   :handle-ok (fn [ctx] (interact-rep/render-interaction-list org-uuid board-uuid resource-uuid
