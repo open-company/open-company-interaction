@@ -2,9 +2,7 @@
   "Namespace for the HTTP application which serves the REST API."
   (:gen-class)
   (:require
-    [raven-clj.core :as sentry]
-    [raven-clj.interfaces :as sentry-interfaces]
-    [raven-clj.ring :as sentry-mw]
+    [oc.lib.sentry.core :as sentry]
     [taoensso.timbre :as timbre]
     [ring.logger.timbre :refer (wrap-with-logger)]
     [liberator.dev :refer (wrap-trace)]
@@ -14,26 +12,12 @@
     [ring.middleware.cors :refer (wrap-cors)]
     [compojure.core :as compojure :refer (GET)]
     [com.stuartsierra.component :as component]
-    [oc.lib.sentry-appender :as sa]
     [oc.interaction.components :as components]
     [oc.interaction.config :as c]
     [oc.interaction.api.comments :as comments-api]
     [oc.interaction.api.reactions :as reactions-api]
     [oc.interaction.api.websockets :as websockets-api]
     [oc.lib.middleware.wrap-ensure-origin :refer (wrap-ensure-origin)]))
-
-;; ----- Unhandled Exceptions -----
-
-;; Send unhandled exceptions to log and Sentry
-;; See https://stuartsierra.com/2015/05/27/clojure-uncaught-exceptions
-(Thread/setDefaultUncaughtExceptionHandler
- (reify Thread$UncaughtExceptionHandler
-   (uncaughtException [_ thread ex]
-     (timbre/error ex "Uncaught exception on" (.getName thread) (.getMessage ex))
-     (when c/dsn
-       (sentry/capture c/dsn (-> {:message (.getMessage ex)}
-                                 (assoc-in [:extra :exception-data] (ex-data ex))
-                                 (sentry-interfaces/stacktrace ex)))))))
 
 ;; ----- Request Routing -----
 
@@ -58,19 +42,24 @@
     "Trace: " c/liberator-trace "\n"
     "Log level: " c/log-level "\n"
     "Ensure origin: " c/ensure-origin "\n"
-    "Sentry: " c/dsn "\n\n"
+    "Sentry: " c/dsn "\n"
+    "  env: " c/sentry-env "\n"
+    (when-not (clojure.string/blank? c/sentry-release)
+      (str "  release: " c/sentry-release "\n"))
+    "\n"
     (when c/intro? "Ready to serve...\n"))))
 
 ;; Ring app definition
 (defn app [sys]
   (cond-> (routes sys)
-    c/dsn             (sentry-mw/wrap-sentry c/dsn) ; important that this is first
+    ; important that this is first
+    c/dsn             (sentry/wrap c/sentry-config)
     c/prod?           wrap-with-logger
     true              wrap-keyword-params
     true              wrap-params
     c/liberator-trace (wrap-trace :header :ui)
     true              (wrap-cors #".*")
-    c/ensure-origin   wrap-ensure-origin
+    c/ensure-origin   (wrap-ensure-origin c/ui-server-url)
     c/hot-reload      wrap-reload))
 
 (defn start
@@ -81,15 +70,15 @@
   (if c/dsn
     (timbre/merge-config!
       {:level (keyword c/log-level)
-       :appenders {:sentry (sa/sentry-appender c/dsn)}})
+       :appenders {:sentry (sentry/sentry-appender c/sentry-config)}})
     (timbre/merge-config! {:level (keyword c/log-level)}))
 
   ;; Start the system
-  (-> {:handler-fn app
+  (-> {:sentry c/sentry-config
+       :handler-fn app
        :port port
        :sqs-creds {:access-key c/aws-access-key-id
-                   :secret-key c/aws-secret-access-key}
-       }
+                   :secret-key c/aws-secret-access-key}}
     components/interaction-system
     component/start)
 

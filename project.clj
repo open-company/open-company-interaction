@@ -13,19 +13,27 @@
 
   ;; All profile dependencies
   :dependencies [
-    [org.clojure/clojure "1.10.2-alpha1"] ; Lisp on the JVM http://clojure.org/documentation
-    [org.clojure/core.cache "0.8.2"] ; Clojure in-memory caching https://github.com/clojure/core.cache
+    [org.clojure/clojure "1.10.2-alpha3"] ; Lisp on the JVM http://clojure.org/documentation
+    [org.clojure/core.cache "1.0.207"] ; Clojure in-memory caching https://github.com/clojure/core.cache
     [org.clojure/tools.cli "1.0.194"] ; Command-line parsing https://github.com/clojure/tools.cli
-    [ring/ring-devel "1.8.0"] ; Web application library https://github.com/ring-clojure/ring
-    [ring/ring-core "1.8.0"] ; Web application library https://github.com/ring-clojure/ring
+    [ring/ring-devel "2.0.0-alpha-1"] ; Web application library https://github.com/ring-clojure/ring
+    [ring/ring-core "2.0.0-alpha1"] ; Web application library https://github.com/ring-clojure/ring
     [ring/ring-json "0.5.0" :exclusions [cheshire]] ; JSON request/response https://github.com/ring-clojure/ring-json
     [jumblerg/ring.middleware.cors "1.0.1"] ; CORS library https://github.com/jumblerg/ring.middleware.cors
     [ring-logger-timbre "0.7.6" :exclusions [com.taoensso/encore]] ; Ring logging https://github.com/nberger/ring-logger-timbre
-    [compojure "1.6.1"] ; Web routing https://github.com/weavejester/compojure
-    [clj-http "3.10.0"] ; HTTP client https://github.com/dakrone/clj-http
+    [compojure "1.6.2"] ; Web routing https://github.com/weavejester/compojure
+    [clj-http "3.10.3"] ; HTTP client https://github.com/dakrone/clj-http
     [clj-soup/clojure-soup "0.1.3"] ; Clojure wrapper for jsoup HTML parser https://github.com/mfornos/clojure-soup
 
-    [open-company/lib "0.17.25.3"] ; Library for OC projects https://github.com/open-company/open-company-lib
+    ;; Library for OC projects https://github.com/open-company/open-company-lib
+    ;; ************************************************************************
+    ;; ****************** NB: don't go under 0.17.29-alpha60 ******************
+    ;; ***************** (JWT schema changes, more info here: *****************
+    ;; ******* https://github.com/open-company/open-company-lib/pull/82) ******
+    ;; ************************************************************************
+    [open-company/lib "0.17.29-alpha67" :exclusions [riddley org.jsoup/jsoup commons-codec clj-http org.apache.httpcomponents/httpclient org.clojure/tools.logging]]
+    
+    ;; ************************************************************************
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
@@ -48,7 +56,7 @@
   ;; All profile plugins
   :plugins [
     [lein-ring "0.12.5"] ; Common ring tasks https://github.com/weavejester/lein-ring
-    [lein-environ "1.1.0"] ; Get environment settings from different sources https://github.com/weavejester/environ
+    [lein-environ "1.2.0"] ; Get environment settings from different sources https://github.com/weavejester/environ
   ]
 
   :profiles {
@@ -80,7 +88,7 @@
         :db-name "open_company_storage_dev"
         :liberator-trace "true" ; liberator debug data in HTTP response headers
         :hot-reload "true" ; reload code when changed on the file system
-        :oc-ws-ensure-origin "false" ; local
+        :oc-ws-ensure-origin "true" ; local
         :open-company-auth-passphrase "this_is_a_dev_secret" ; JWT secret
         :aws-access-key-id "CHANGE-ME"
         :aws-secret-access-key "CHANGE-ME"
@@ -146,8 +154,9 @@
     "build" ["do" "clean," "deps," "compile"] ; clean and build code
     "create-migration" ["run" "-m" "oc.interaction.db.migrations" "create"] ; create a data migration
     "migrate-db" ["run" "-m" "oc.interaction.db.migrations" "migrate"] ; run pending data migrations
-    "start" ["do" "migrate-db," "run"] ; start a development server
-    "start!" ["with-profile" "prod" "do" "start"] ; start a server in production
+    "start*" ["do" "migrate-db," "run"] ; start the service
+    "start" ["with-profile" "dev" "do" "start*"] ; start a development server
+    "start!" ["with-profile" "prod" "do" "start*"] ; start a server in production
     "autotest" ["with-profile" "qa" "do" "migrate-db," "midje" ":autotest"] ; watch for code changes and run affected tests
     "test!" ["with-profile" "qa" "do" "clean," "build," "migrate-db," "midje"] ; build, init the DB and run all tests
     "repl" ["with-profile" "+repl-config" "repl"]
@@ -160,7 +169,7 @@
 
   :eastwood {
     ;; Disable some linters that are enabled by default:
-    ;; contant-test - just seems mostly ill-advised, logical constants are useful in something like a `->cond` 
+    ;; constant-test - just seems mostly ill-advised, logical constants are useful in something like a `->cond`
     ;; deprecations - the useful `either` from Prismatic schema is deprecated, we'll eventually switch to clojure.spec
     ;; wrong-arity - Eastwood can't decipder the arity of some Amazonica SQS fns
     ;; implicit-dependencies - uhh, just seems dumb

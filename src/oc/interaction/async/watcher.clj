@@ -20,6 +20,7 @@
   ([event interaction reaction-count sender-ws-client-id]
   (timbre/info "Sending:" event "to the watcher for:" (:uuid interaction) "skipping client:" sender-ws-client-id)
   (let [initial-payload {:resource-uuid (:resource-uuid interaction)
+                         :container-id (:board-uuid interaction)
                          :interaction (interact-rep/interaction-representation interaction :none)}
         payload (if reaction-count (assoc initial-payload :count reaction-count) initial-payload)]
     (>!! watcher/watcher-chan {:send true

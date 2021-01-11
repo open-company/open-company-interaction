@@ -10,6 +10,7 @@
             [oc.lib.db.common :as db-common]
             [oc.lib.schema :as lib-schema]
             [oc.lib.time :as oc-time]
+            [oc.lib.sentry.core :as sentry]
             [oc.interaction.config :as config]
             [oc.interaction.resources.interaction :as interact-res]))
 
@@ -50,18 +51,22 @@
   {:notification-type (schema/pred notification-type?)
    :resource-type (schema/pred resource-type?)
    :uuid lib-schema/UniqueID
+   (schema/optional-key :parent-uuid) (schema/maybe lib-schema/UniqueID)
    (schema/optional-key :secure-uuid) lib-schema/UniqueID
    :org-uuid lib-schema/UniqueID
    :org {schema/Any schema/Any}
    :board-uuid lib-schema/UniqueID
+   :board-access lib-schema/NonBlankStr
+   (schema/optional-key :allowed-users) (schema/maybe [lib-schema/UniqueID])
    :content {
-    (schema/optional-key :new) (schema/conditional #(= (resource-type %) :comment) interact-res/Comment
-                                                   :else interact-res/Reaction)
-    (schema/optional-key :old) (schema/conditional #(= (resource-type %) :comment) interact-res/Comment
-                                                   :else interact-res/Reaction)}
+             (schema/optional-key :new) (schema/conditional #(= (resource-type %) :comment) interact-res/Comment
+                                                            :else interact-res/Reaction)
+             (schema/optional-key :old) (schema/conditional #(= (resource-type %) :comment) interact-res/Comment
+                                                            :else interact-res/Reaction)}
    :user lib-schema/User
    :item-publisher lib-schema/User
    :notification-at lib-schema/ISO8601
+   (schema/optional-key :author-wants-follow?) (schema/maybe schema/Bool)
    (schema/optional-key :notify-users) [lib-schema/Author]})
 
 ;; ----- Event handling -----
@@ -98,23 +103,31 @@
           (try
             (handle-notification-message message)
           (catch Exception e
-            (timbre/error e)))))))))
+            (timbre/warn e)
+            (sentry/capture {:throwable e :message (str "Error processing message on notifications loop: " e) :extra {:message message}})))))))))
 
 ;; ----- Notification triggering -----
 
-(defn ->trigger [conn notification-type interaction content user]
+(defn ->trigger
+  ([conn notification-type interaction content user] (->trigger conn notification-type interaction content user true))
+  ([conn notification-type interaction content user author-wants-follow?]
   (let [resource-uuid (or (-> content :new :resource-uuid) (-> content :old :resource-uuid))
         item (or (db-common/read-resource conn "entries" resource-uuid) ; for post reaction or comment
                  (db-common/read-resource conn "interactions" resource-uuid)) ; for comment reaction
         comment-reaction? (if (:resource-uuid item) true false)
         org-uuid (:org-uuid interaction)
+        board-uuid (:board-uuid interaction)
         resource-type (resource-type interaction)
         org (first (db-common/read-resources conn "orgs" "uuid" org-uuid))
+        board (first (db-common/read-resources conn "boards" "uuid" board-uuid))
+        board-access (:access board)
         ;; Notify other users involved in the discussion
         should-notify-other-users? (and (= notification-type :add)
                                         (= resource-type :comment))
-        resource (when should-notify-other-users?
-                   (:existing-resource content))
+        ;; Allowed users: return a sequence only if board is private, else nil
+        allowed-users (when (and (map? board)
+                                 (= board-access "private"))
+                        (vec (concat (:viewers board) (:authors board))))
         resource-comments (when should-notify-other-users?
                             (:existing-comments content))
         all-authors (when should-notify-other-users?
@@ -138,17 +151,21 @@
         trigger {:notification-type notification-type
                  :resource-type resource-type
                  :uuid (:uuid interaction)
+                 :parent-uuid (:parent-uuid interaction)
                  :org-uuid (:org-uuid interaction)
                  :org org
                  :board-uuid (:board-uuid interaction)
+                 :board-access board-access
+                 :allowed-users allowed-users
                  :content cleaned-content
                  :user user
+                 :author-wants-follow? author-wants-follow?
                  :notify-users involved-distinct-users
                  :item-publisher (if comment-reaction?
                                     (:author item) ; author of the comment
                                     (:publisher item)) ; publisher of the entry (interactions only occur on published entries)
                  :notification-at (oc-time/current-timestamp)}]
-    (if comment-reaction? trigger (assoc trigger :secure-uuid (:secure-uuid item)))))
+    (if comment-reaction? trigger (assoc trigger :secure-uuid (:secure-uuid item))))))
 
 (schema/defn ^:always-validate send-trigger! [trigger :- NotificationTrigger]
   (if (clojure.string/blank? config/aws-sns-interaction-topic-arn)

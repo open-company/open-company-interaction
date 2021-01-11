@@ -18,6 +18,11 @@
 ;; ----- Sentry -----
 
 (defonce dsn (or (env :open-company-sentry-interaction) false))
+(defonce sentry-release (or (env :release) ""))
+(defonce sentry-env (or (env :environment) "local"))
+(defonce sentry-config {:dsn dsn
+                        :release sentry-release
+                        :environment sentry-env})
 
 ;; ----- Logging (see https://github.com/ptaoussanis/timbre) -----
 
@@ -51,7 +56,7 @@
 ;; ----- URLs -----
 
 (defonce ui-server-url (or (env :ui-server-url) "http://localhost:3559"))
-(defonce web-cdn-url (or (env :web-cdn-url) "https://do64qbk3yqbc.cloudfront.net"))
+(defonce web-cdn-url (or (env :web-cdn-url) "https://d16anbmiggbhpz.cloudfront.net"))
 
 ;; ----- AWS SQS / SNS -----
 
