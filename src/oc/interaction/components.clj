@@ -1,6 +1,7 @@
 (ns oc.interaction.components
   (:require [com.stuartsierra.component :as component]
             [taoensso.timbre :as timbre]
+            [oc.lib.sentry.core :refer (map->SentryCapturer)]
             [org.httpkit.server :as httpkit]
             [oc.lib.db.pool :as pool]
             [oc.lib.async.watcher :as watcher]
@@ -24,7 +25,7 @@
         (http-kit)
         (websockets-api/stop)
         (timbre/info "[http] stopped")
-        (dissoc component :http-kit))
+        (assoc component :http-kit nil))
       component)))
 
 (defrecord RethinkPool [size regenerate-interval]
@@ -43,7 +44,7 @@
         (timbre/info "[rethinkdb-pool] stopping...")
         (pool/shutdown-pool! pool)
         (timbre/info "[rethinkdb-pool] stopped")
-        (dissoc component :pool))
+        (assoc component :pool nil))
       component)))
 
 (defrecord AsyncConsumers []
@@ -61,7 +62,7 @@
         (timbre/info "[async-consumers] stopping")
         (notification/stop) ; core.async channel consumer for notification events
         (timbre/info "[async-consumers] stopped")
-        (dissoc component :async-consumers))
+        (assoc component :async-consumers nil))
     component)))
 
 (defrecord Handler [handler-fn]
@@ -77,18 +78,21 @@
     (timbre/info "[handler] stopping...")
     (watcher/stop) ; core.async channel consumer for watched items (boards watched by websockets) events
     (timbre/info "[handler] stopped")
-    (dissoc component :handler)))
+    (assoc component :handler nil)))
 
 (defn db-only-interaction-system [_opts]
   (component/system-map
    :db-pool (map->RethinkPool {:size c/db-pool-size :regenerate-interval 5})))
 
-(defn interaction-system [{:keys [port handler-fn] :as opts}]
+(defn interaction-system [{:keys [port handler-fn sentry] :as opts}]
   (component/system-map
-    :db-pool (map->RethinkPool {:size c/db-pool-size :regenerate-interval 5})
+    :sentry-capturer (map->SentryCapturer sentry)
+    :db-pool (component/using
+              (map->RethinkPool {:size c/db-pool-size :regenerate-interval 5})
+              [:sentry-capturer])
     :async-consumers (component/using
                         (map->AsyncConsumers {})
-                        [])
+                        [:sentry-capturer])
     :handler (component/using
                 (map->Handler {:handler-fn handler-fn})
                 [:db-pool])

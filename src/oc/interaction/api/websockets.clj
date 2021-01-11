@@ -7,6 +7,7 @@
             [taoensso.sente.server-adapters.http-kit :refer (get-sch-adapter)]
             [oc.lib.async.watcher :as watcher]
             [oc.lib.jwt :as jwt]
+            [oc.lib.sentry.core :as sentry]
             [oc.interaction.config :as c]))
 
 ;; ----- core.async -----
@@ -138,7 +139,8 @@
               (timbre/info "[websocket] sending:" (first event) "to:" id)
               (chsk-send! id event))
             (catch Exception e
-              (timbre/error e)))))))))
+              (timbre/warn e)
+              (sentry/capture {:throwable e :message (str "Error processing message on websocket loop: " e) :extra {:event (:event message)}})))))))))
 
 ;; ----- Ring routes -----
 

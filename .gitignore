@@ -16,5 +16,12 @@ pom.xml.asc
 /.nrepl-port
 .idea/
 
+.idea/
+.vscode/
+.calva/
+.lsp/
+.clj-kondo/
+.clojure-lsp/
+
 .ruby-gemset
 .ruby-version
