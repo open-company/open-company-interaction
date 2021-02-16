@@ -20,7 +20,11 @@
     [ring/ring-core "2.0.0-alpha1"] ; Web application library https://github.com/ring-clojure/ring
     [ring/ring-json "0.5.0" :exclusions [cheshire]] ; JSON request/response https://github.com/ring-clojure/ring-json
     [jumblerg/ring.middleware.cors "1.0.1"] ; CORS library https://github.com/jumblerg/ring.middleware.cors
-    [ring-logger-timbre "0.7.6" :exclusions [com.taoensso/encore]] ; Ring logging https://github.com/nberger/ring-logger-timbre
+    ;; Ring logging https://github.com/nberger/ring-logger-timbre
+    ;; NB: com.taoensso/encore pulled in by oc.lib
+    ;; NB: com.taoensso/timbre pulled in by oc.lib
+    ;; NB: org.clojure/tools.logging pulled in by oc.lib
+    [ring-logger-timbre "0.7.6"]
     [compojure "1.6.2"] ; Web routing https://github.com/weavejester/compojure
     [clj-http "3.10.3"] ; HTTP client https://github.com/dakrone/clj-http
     [clj-soup/clojure-soup "0.1.3"] ; Clojure wrapper for jsoup HTML parser https://github.com/mfornos/clojure-soup
