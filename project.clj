@@ -35,7 +35,7 @@
     ;; ***************** (JWT schema changes, more info here: *****************
     ;; ******* https://github.com/open-company/open-company-lib/pull/82) ******
     ;; ************************************************************************
-    [open-company/lib "0.17.31-alpha6" :exclusions [com.taoensso/timbre commons-codec org.jsoup/jsoup org.clojure/tools.reader org.clojure/tools.logging riddley]]
+    [open-company/lib "0.17.31-alpha6" :exclusions [riddley org.jsoup/jsoup commons-codec clj-http org.apache.httpcomponents/httpclient org.clojure/tools.logging]]
     
     ;; ************************************************************************
     ;; In addition to common functions, brings in the following common dependencies used by this project:
