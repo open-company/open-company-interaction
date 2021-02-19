@@ -200,9 +200,7 @@
   :handle-ok (fn [ctx] (interact-rep/render-interaction-list org-uuid board-uuid resource-uuid
                         (:existing-comments ctx) (:user ctx)))
   :handle-created (fn [ctx] (let [new-interaction (:created-interaction ctx)]
-                              (interact-rep/render-interaction new-interaction :author)))
-  :handle-unprocessable-entity (fn [ctx]
-    (api-common/unprocessable-entity-response (:reason ctx))))
+                              (interact-rep/render-interaction new-interaction :author))))
 
 ;; ----- Routes -----
 

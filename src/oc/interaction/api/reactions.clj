@@ -182,9 +182,7 @@
   :respond-with-entity? true
   :new? (fn [ctx] (if (:existing-reaction ctx) false true))
   :handle-created (fn [ctx] (reaction-response ctx org-uuid board-uuid resource-uuid))
-  :handle-ok (fn [ctx] (reaction-response ctx org-uuid board-uuid resource-uuid))
-  :handle-unprocessable-entity (fn [ctx]
-    (api-common/unprocessable-entity-response (:reason ctx))))
+  :handle-ok (fn [ctx] (reaction-response ctx org-uuid board-uuid resource-uuid)))
 
 ;; ----- Routes -----
 
