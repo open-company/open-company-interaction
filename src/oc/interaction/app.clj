@@ -42,10 +42,7 @@
     "Trace: " c/liberator-trace "\n"
     "Log level: " c/log-level "\n"
     "Ensure origin: " c/ensure-origin "\n"
-    "Sentry: " c/dsn "\n"
-    "  env: " c/sentry-env "\n"
-    (when-not (clojure.string/blank? c/sentry-release)
-      (str "  release: " c/sentry-release "\n"))
+    "Sentry: " c/sentry-config "\n"
     "\n"
     (when c/intro? "Ready to serve...\n"))))
 
